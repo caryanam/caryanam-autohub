@@ -35,6 +35,8 @@ public class OlxImportServiceImpl implements OlxImportService {
     private String port;
     @Value("${spring.server.url}")
     private String serverUrl;
+
+
     @Override
     public void importData(MultipartFile excel,
                            MultipartFile zip) throws Exception {
@@ -136,7 +138,7 @@ public class OlxImportServiceImpl implements OlxImportService {
                 for (int col = 13; col <= 30; col++) {
 
                     String imageName =
-                            "row_" + rowNum +
+                            "row_" + (rowNum + 1) +
                                     "_col_" + col + ".jpg";
 
                     File imageFile =
