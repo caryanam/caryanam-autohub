@@ -29,6 +29,9 @@ public class WishlistServiceImpl implements WishlistService {
     @Value("${server.port}")
     private String port;
 
+    @Value("${spring.server.url}")
+    private String serverUrl;
+
     @Override
     public String addToWishlist(Long customerId, Long vehicleId) {
 
@@ -82,7 +85,7 @@ public class WishlistServiceImpl implements WishlistService {
                                         : w.getVehicle().getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         .findFirst()
-                                        .map(media -> "http://localhost:" + port +
+                                        .map(media -> serverUrl + port +
                                                 media.getFilePath().replace("\\", "/"))
                                         .orElse(null)
                         )

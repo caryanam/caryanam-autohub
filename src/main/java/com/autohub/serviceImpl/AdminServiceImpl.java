@@ -34,6 +34,9 @@ public class AdminServiceImpl implements AdminService {
     @Value("${server.port}")
     private String port;
 
+    @Value("${spring.server.url}")
+    private String serverUrl;
+
 
     //All dealer
     @Override
@@ -64,13 +67,13 @@ public class AdminServiceImpl implements AdminService {
                         .showroomImage(
                                 dealer.getShowroomImage() == null
                                         ? null
-                                        : "http://localhost:" + port + "/" +
+                                        : serverUrl+ port + "/" +
                                         dealer.getShowroomImage().replace("\\", "/")
                         )
                         .dealerLogo(
                                 dealer.getDealerLogo() == null
                                         ? null
-                                        : "http://localhost:" + port + "/" +
+                                        : serverUrl+ port + "/" +
                                         dealer.getDealerLogo().replace("\\", "/")
                         )
                         .dealerAccountStatus(dealer.getDealerAccountStatus())
@@ -159,7 +162,7 @@ public class AdminServiceImpl implements AdminService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> "http://localhost:"+port+
+                                        .map(media -> serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -170,7 +173,7 @@ public class AdminServiceImpl implements AdminService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media ->"http://localhost:"+port+ "/" +
+                                        .map(media ->serverUrl+port+ "/" +
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )

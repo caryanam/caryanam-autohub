@@ -24,6 +24,9 @@ public class VehicleViewServiceImpl implements VehicleViewService {
     @Value("${server.port}")
     private String port;
 
+    @Value("${spring.server.url}")
+    private String serverUrl;
+
     @Override
     public void saveView(Long vehicleId) {
 
@@ -115,7 +118,7 @@ public class VehicleViewServiceImpl implements VehicleViewService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> "http://localhost:"+port+"/" +
+                                .map(media -> serverUrl+port+"/" +
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
@@ -126,7 +129,7 @@ public class VehicleViewServiceImpl implements VehicleViewService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> "http://localhost:"+port+"/" +
+                                .map(media -> serverUrl+port+"/" +
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )

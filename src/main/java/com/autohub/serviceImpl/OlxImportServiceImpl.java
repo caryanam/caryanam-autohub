@@ -33,7 +33,8 @@ public class OlxImportServiceImpl implements OlxImportService {
 
     @Value("${server.port}")
     private String port;
-
+    @Value("${spring.server.url}")
+    private String serverUrl;
     @Override
     public void importData(MultipartFile excel,
                            MultipartFile zip) throws Exception {
@@ -203,7 +204,7 @@ public class OlxImportServiceImpl implements OlxImportService {
 
                             dto.setId(image.getId());
                             dto.setImageUrl(
-                                    "http://localhost:" + port +
+                                    serverUrl + port +
                                             image.getFilePath().replace("\\", "/")
                             );
 
@@ -338,7 +339,7 @@ public class OlxImportServiceImpl implements OlxImportService {
                                         dto.setId(image.getId());
                                        // dto.setImageUrl( image.getImageUrl());
                                         dto.setImageUrl(
-                                                "http://localhost:" + port +
+                                                serverUrl + port +
                                                         image.getFilePath().replace("\\", "/")
                                         );
                                         return dto;

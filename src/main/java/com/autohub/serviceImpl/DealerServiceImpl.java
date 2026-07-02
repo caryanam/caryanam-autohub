@@ -47,6 +47,9 @@ public class DealerServiceImpl implements DealerService {
     @Value("${server.port}")
     private String baseUrl;
 
+    @Value("${spring.server.url}")
+    private String serverUrl;
+
 
 
     @Override
@@ -284,14 +287,14 @@ public class DealerServiceImpl implements DealerService {
                 .state(dealer.getState())
                 .pinCode(dealer.getPinCode()).dealerLogo(
                        dealer.getDealerLogo() != null
-                               ? "http://localhost:"+ baseUrl + "/" +
+                               ? serverUrl+ baseUrl + "/" +
                                dealer.getDealerLogo().replace("\\", "/")
                                : null
                )
 
                .showroomImage(
                        dealer.getShowroomImage() != null
-                               ? "http://localhost:"+ baseUrl + "/" +
+                               ? serverUrl+ baseUrl + "/" +
                                dealer.getShowroomImage().replace("\\", "/")
                                : null
                )

@@ -44,6 +44,9 @@ public class VehicleServiceImpl implements VehicleService {
     @Value("${server.port}")
     private String port;
 
+    @Value("${spring.server.url}")
+    private String serverUrl;
+
     @Override
     public VehicleResponseDTO addVehicleWithData(VehicleRequestDTO vehicleRequestDTO, List<MultipartFile> images, List<MultipartFile> videos, Long dealerId) throws IOException {
 
@@ -334,12 +337,12 @@ public class VehicleServiceImpl implements VehicleService {
 
         List<String> image = mediaList.stream()
                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                .map(media -> "http://localhost:"+port + media.getFilePath().replace("\\", "/"))
+                .map(media -> serverUrl+port + media.getFilePath().replace("\\", "/"))
                 .toList();
 
         List<String> video = mediaList.stream()
                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                .map(media -> "http://localhost:"+port + media.getFilePath().replace("\\", "/"))
+                .map(media -> serverUrl+port + media.getFilePath().replace("\\", "/"))
                 .toList();
 
         System.out.println("Media Count = " + mediaList.size());
@@ -502,7 +505,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> "http://localhost:"+port+
+                                        .map(media -> serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -513,7 +516,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media ->"http://localhost:"+port+
+                                        .map(media ->serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -561,14 +564,14 @@ public class VehicleServiceImpl implements VehicleService {
                 .dealerLogo(
                         vehicle.getDealer().getDealerLogo() == null
                                 ? null
-                                : "http://localhost:" + port +
+                                : serverUrl+ port +
                                 vehicle.getDealer().getDealerLogo().replace("\\", "/")
                 )
 
                 .dealerShowroomImage(
                         vehicle.getDealer().getShowroomImage() == null
                                 ? null
-                                : "http://localhost:" + port +
+                                : serverUrl + port +
                                 vehicle.getDealer().getShowroomImage().replace("\\", "/")
                 )
                 .images(
@@ -577,7 +580,7 @@ public class VehicleServiceImpl implements VehicleService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> "http://localhost:"+port+
+                                .map(media -> serverUrl+port+
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
@@ -588,7 +591,7 @@ public class VehicleServiceImpl implements VehicleService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> "http://localhost:"+port+
+                                .map(media -> serverUrl+port+
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
@@ -635,7 +638,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> "http://localhost:" + port +
+                                        .map(media ->serverUrl+ port +
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -644,7 +647,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> "http://localhost:" + port +
+                                        .map(media -> serverUrl+ port +
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -699,7 +702,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> "http://localhost:" + port +
+                                        .map(media -> serverUrl+ port +
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -708,7 +711,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> "http://localhost:" + port +
+                                        .map(media -> serverUrl + port +
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -903,7 +906,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> "http://localhost:"+port+
+                                        .map(media -> serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -914,7 +917,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
 
-                                        .map(media ->"http://localhost:"+port+
+                                        .map(media ->serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -974,7 +977,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> "http://localhost:"+port+
+                                        .map(media -> serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -985,7 +988,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media ->"http://localhost:"+port+
+                                        .map(media ->serverUrl+port+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
