@@ -67,13 +67,13 @@ public class AdminServiceImpl implements AdminService {
                         .showroomImage(
                                 dealer.getShowroomImage() == null
                                         ? null
-                                        : serverUrl+ port + "/" +
+                                        : serverUrl+
                                         dealer.getShowroomImage().replace("\\", "/")
                         )
                         .dealerLogo(
                                 dealer.getDealerLogo() == null
                                         ? null
-                                        : serverUrl+ port + "/" +
+                                        : serverUrl+
                                         dealer.getDealerLogo().replace("\\", "/")
                         )
                         .dealerAccountStatus(dealer.getDealerAccountStatus())
@@ -162,7 +162,7 @@ public class AdminServiceImpl implements AdminService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+port+
+                                        .map(media -> serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -173,7 +173,7 @@ public class AdminServiceImpl implements AdminService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media ->serverUrl+port+ "/" +
+                                        .map(media ->serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )

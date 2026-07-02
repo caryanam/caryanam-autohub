@@ -287,14 +287,14 @@ public class DealerServiceImpl implements DealerService {
                 .state(dealer.getState())
                 .pinCode(dealer.getPinCode()).dealerLogo(
                        dealer.getDealerLogo() != null
-                               ? serverUrl+ baseUrl + "/" +
+                               ? serverUrl+
                                dealer.getDealerLogo().replace("\\", "/")
                                : null
                )
 
                .showroomImage(
                        dealer.getShowroomImage() != null
-                               ? serverUrl+ baseUrl + "/" +
+                               ? serverUrl+
                                dealer.getShowroomImage().replace("\\", "/")
                                : null
                )

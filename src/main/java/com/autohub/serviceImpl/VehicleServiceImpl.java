@@ -337,12 +337,12 @@ public class VehicleServiceImpl implements VehicleService {
 
         List<String> image = mediaList.stream()
                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                .map(media -> serverUrl+port + media.getFilePath().replace("\\", "/"))
+                .map(media -> serverUrl+ media.getFilePath().replace("\\", "/"))
                 .toList();
 
         List<String> video = mediaList.stream()
                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                .map(media -> serverUrl+port + media.getFilePath().replace("\\", "/"))
+                .map(media -> serverUrl+ media.getFilePath().replace("\\", "/"))
                 .toList();
 
         System.out.println("Media Count = " + mediaList.size());
@@ -505,7 +505,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+port+
+                                        .map(media -> serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -516,7 +516,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media ->serverUrl+port+
+                                        .map(media ->serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -564,14 +564,14 @@ public class VehicleServiceImpl implements VehicleService {
                 .dealerLogo(
                         vehicle.getDealer().getDealerLogo() == null
                                 ? null
-                                : serverUrl+ port +
+                                : serverUrl+
                                 vehicle.getDealer().getDealerLogo().replace("\\", "/")
                 )
 
                 .dealerShowroomImage(
                         vehicle.getDealer().getShowroomImage() == null
                                 ? null
-                                : serverUrl + port +
+                                : serverUrl +
                                 vehicle.getDealer().getShowroomImage().replace("\\", "/")
                 )
                 .images(
@@ -580,7 +580,7 @@ public class VehicleServiceImpl implements VehicleService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> serverUrl+port+
+                                .map(media -> serverUrl+
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
@@ -591,7 +591,7 @@ public class VehicleServiceImpl implements VehicleService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> serverUrl+port+
+                                .map(media -> serverUrl+
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
@@ -638,7 +638,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media ->serverUrl+ port +
+                                        .map(media ->serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -647,7 +647,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> serverUrl+ port +
+                                        .map(media -> serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -702,7 +702,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> serverUrl+ port +
+                                        .map(media -> serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -711,7 +711,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         ? List.of()
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> serverUrl + port +
+                                        .map(media -> serverUrl +
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -906,7 +906,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+port+
+                                        .map(media -> serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -917,7 +917,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
 
-                                        .map(media ->serverUrl+port+
+                                        .map(media ->serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -977,7 +977,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+port+
+                                        .map(media -> serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )
@@ -988,7 +988,7 @@ public class VehicleServiceImpl implements VehicleService {
                                         : vehicle.getMediaList().stream()
                                         .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                         //.map(VehicleMedia::getFilePath)
-                                        .map(media ->serverUrl+port+
+                                        .map(media ->serverUrl+
                                                 media.getFilePath().replace("\\", "/"))
                                         .toList()
                         )

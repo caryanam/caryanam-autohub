@@ -204,7 +204,7 @@ public class OlxImportServiceImpl implements OlxImportService {
 
                             dto.setId(image.getId());
                             dto.setImageUrl(
-                                    serverUrl + port +
+                                    serverUrl +
                                             image.getFilePath().replace("\\", "/")
                             );
 
@@ -339,7 +339,7 @@ public class OlxImportServiceImpl implements OlxImportService {
                                         dto.setId(image.getId());
                                        // dto.setImageUrl( image.getImageUrl());
                                         dto.setImageUrl(
-                                                serverUrl + port +
+                                                serverUrl +
                                                         image.getFilePath().replace("\\", "/")
                                         );
                                         return dto;

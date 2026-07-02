@@ -118,7 +118,7 @@ public class VehicleViewServiceImpl implements VehicleViewService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> serverUrl+port+"/" +
+                                .map(media -> serverUrl+
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
@@ -129,7 +129,7 @@ public class VehicleViewServiceImpl implements VehicleViewService {
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
                                 //.map(VehicleMedia::getFilePath)
-                                .map(media -> serverUrl+port+"/" +
+                                .map(media -> serverUrl+
                                         media.getFilePath().replace("\\", "/"))
                                 .toList()
                 )
