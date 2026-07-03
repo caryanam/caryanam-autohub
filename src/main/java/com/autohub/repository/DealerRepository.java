@@ -19,6 +19,10 @@ public interface DealerRepository extends JpaRepository<Dealer, Long> {
 
     Optional<Dealer> findByEmail(String email);
 
+    boolean existsByGstNumber(String gstNumber);
+
+    boolean existsByWhatsapp(String whatsappNumber);
+
     Optional<Dealer> findByExecutiveMobile(String executiveMobile);
 
     boolean existsByExecutiveMobile(String executiveMobile);

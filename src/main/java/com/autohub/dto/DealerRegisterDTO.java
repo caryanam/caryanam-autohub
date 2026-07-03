@@ -16,6 +16,8 @@ public class DealerRegisterDTO {
     private String gstNumber;
 
     @NotNull(message = "Years In Business is Required")
+    @Min(value = 0, message = "Years in business cannot be negative")
+    @Max(value = 100, message = "Invalid years in business")
     private Integer yearsInBusiness;
 
     @NotBlank(message = "Dealer Mobile Number is Required")
@@ -76,5 +78,7 @@ public class DealerRegisterDTO {
             message = "PinCode must be a valid 6-digit Indian PIN Code"
     )
     private String pinCode;
+
+
 
 }

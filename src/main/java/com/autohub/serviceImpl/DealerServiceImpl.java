@@ -66,6 +66,14 @@ public class DealerServiceImpl implements DealerService {
             throw new RuntimeException("Mobile already registered");
         }
 
+        if (dealerRepository.existsByGstNumber(dto.getGstNumber())) {
+            throw new RuntimeException("GST Number already registered");
+        }
+
+        if (dealerRepository.existsByWhatsapp(dto.getWhatsapp())) {
+            throw new RuntimeException("WhatsApp number already registered");
+        }
+
         Dealer dealer = new Dealer();
         dealer.setBusinessName(dto.getBusinessName());
         dealer.setOwnerName(dto.getOwnerName());
@@ -82,23 +90,42 @@ public class DealerServiceImpl implements DealerService {
         dealer.setState(dto.getState());
         dealer.setPinCode(dto.getPinCode());
 
-        //Free trial for 1 month for dealer from registraion
+        //Free trial for 1 month for dealer from registration date
         dealer.setFreeTrialEndDate(LocalDateTime.now().plusMonths(1));
+        dealer.setSubscriptionPlan(SubscriptionPlan.BASIC);
 
         dealer.setRole(Role.DEALER);
 
         Dealer savedDealer = dealerRepository.save(dealer);
 
         if (dealerLogo != null && !dealerLogo.isEmpty()) {
+
+            if (!dealerLogo.getContentType().startsWith("image/")) {
+                throw new RuntimeException("Only image files are allowed");
+            }
+
+            if (dealerLogo.getSize() > 5 * 1024 * 1024) {
+                throw new RuntimeException("Logo size should be less than 5 MB");
+            }
+
             String logoPath = saveFile(
                     dealerLogo,
                     String.valueOf(savedDealer.getId()),
                     "logo");
 
             savedDealer.setDealerLogo(logoPath);
+
         }
 
         if (showroomImage != null && !showroomImage.isEmpty()) {
+
+            if (!showroomImage.getContentType().startsWith("image/")) {
+                throw new RuntimeException("Only image files are allowed");
+            }
+
+            if (showroomImage.getSize() > 5 * 1024 * 1024) {
+                throw new RuntimeException("Showroom Image size should be less than 5 MB");
+            }
             String showroomPath = saveFile(
                     showroomImage,
                     String.valueOf(savedDealer.getId()),
@@ -118,9 +145,7 @@ public class DealerServiceImpl implements DealerService {
 //        throw new RuntimeException("Email already registered");
 //    }
 //
-//    if (dealerRepository.existsByMobile(dto.getMobile())) {
-//        throw new RuntimeException("Mobile already registered");
-//    }
+//
 //
 //    validateImage(dealerLogo, "Dealer Logo");
 //    validateImage(showroomImage, "Showroom Image");
@@ -270,7 +295,6 @@ public class DealerServiceImpl implements DealerService {
     public DealerResponseDTO getDealerProfile(Long dealerId) {
         Dealer dealer = dealerRepository.findById(dealerId).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
 
-        //return modelMapper.map(dealer,DealerResponseDTO.class);
 
        return DealerResponseDTO.builder()
                 .id(dealer.getId())
@@ -278,9 +302,9 @@ public class DealerServiceImpl implements DealerService {
                 .ownerName(dealer.getOwnerName())
                 .gstNumber(dealer.getGstNumber())
                 .yearsInBusiness(dealer.getYearsInBusiness())
-                .dealerMobile(dealer.getDealerMobile())
-               .executiveMobile(dealer.getExecutiveMobile())
-                .whatsapp(dealer.getWhatsapp())
+                //.dealerMobile(dealer.getDealerMobile())
+               //.executiveMobile(dealer.getExecutiveMobile())
+                //.whatsapp(dealer.getWhatsapp())
                 .email(dealer.getEmail())
                 .address(dealer.getAddress())
                 .city(dealer.getCity())
