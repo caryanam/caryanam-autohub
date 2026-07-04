@@ -66,9 +66,9 @@ public class DealerServiceImpl implements DealerService {
             throw new RuntimeException("Mobile already registered");
         }
 
-        if (dealerRepository.existsByGstNumber(dto.getGstNumber())) {
-            throw new RuntimeException("GST Number already registered");
-        }
+//        if (dealerRepository.existsByGstNumber(dto.getGstNumber())) {
+//            throw new RuntimeException("GST Number already registered");
+//        }
 
         if (dealerRepository.existsByWhatsapp(dto.getWhatsapp())) {
             throw new RuntimeException("WhatsApp number already registered");
@@ -93,6 +93,9 @@ public class DealerServiceImpl implements DealerService {
         //Free trial for 1 month for dealer from registration date
         dealer.setFreeTrialEndDate(LocalDateTime.now().plusMonths(1));
         dealer.setSubscriptionPlan(SubscriptionPlan.BASIC);
+        dealer.setSubscriptionStartDate(LocalDateTime.now());
+        dealer.setSubscriptionEndDate(LocalDateTime.now().plusMonths(1));
+        dealer.setSubscriptionActive(true);
 
         dealer.setRole(Role.DEALER);
 

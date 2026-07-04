@@ -85,6 +85,7 @@ public class SecurityConfig {
                                 ).authenticated()
 
 
+
                                 //ADMIN API
                                 .requestMatchers("/api/admin/**"
                                         ,"/api/payment/success/**"
@@ -99,7 +100,7 @@ public class SecurityConfig {
 
                                 ).hasRole("ADMIN")
 
-                                //DEALER API
+                                //DEALER API //FIX IDOR BUG FOR DEALER
                                 .requestMatchers(
                                         "/api/lead/**",
                                         "/api/dealer/**",
@@ -241,6 +242,7 @@ public class SecurityConfig {
                 "http://127.0.0.1:5500",
                 "http://localhost:5500",
                 "https://caryanam.com/",
+                "https://www.caryanam.com",
                 "https://c1.caryanam.com/"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"));

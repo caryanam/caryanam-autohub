@@ -1,21 +1,21 @@
 package com.autohub.configuration;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.messaging.*;
+import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.support.*;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
 @Component
 @RequiredArgsConstructor
 public class AuthChannelInterceptor
         implements ChannelInterceptor {
 
     private final JwtUtil jwtUtil;
-    private final CustomUserDetailsService customUserDetailsService;
+
+    private final CustomUserDetailsService userDetailsService;
+
     private final OnlineUserStore onlineUserStore;
 
     @Override
@@ -28,25 +28,18 @@ public class AuthChannelInterceptor
                         message,
                         StompHeaderAccessor.class
                 );
-        System.out.println(
-                "COMMAND = " + accessor.getCommand()
-        );
 
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-
-            System.out.println("CONNECT RECEIVED");
+        if (StompCommand.CONNECT.equals(
+                accessor.getCommand())) {
 
             String authHeader =
                     accessor.getFirstNativeHeader(
                             "Authorization"
                     );
 
-            System.out.println(
-                    "AUTH HEADER = " + authHeader
-            );
-
-            if (authHeader == null
-                    || !authHeader.startsWith("Bearer ")) {
+            if(authHeader == null
+                    ||
+                    !authHeader.startsWith("Bearer ")) {
 
                 throw new RuntimeException(
                         "Unauthorized"
@@ -56,28 +49,21 @@ public class AuthChannelInterceptor
             String token =
                     authHeader.substring(7);
 
-            System.out.println(
-                    "TOKEN = " + token
-            );
-
             String username =
                     jwtUtil.extractUsername(token);
 
-            System.out.println(
-                    "USERNAME = " + username
-            );
-
             UserDetails userDetails =
-                    customUserDetailsService
-                            .loadUserByUsername(username);
+                    userDetailsService
+                            .loadUserByUsername(
+                                    username
+                            );
 
-            if (!jwtUtil.validateToken(
+            if(!jwtUtil.validateToken(
                     token,
-                    userDetails.getUsername()
-            )) {
+                    username)) {
 
                 throw new RuntimeException(
-                        "Invalid Token"
+                        "Invalid token"
                 );
             }
 
@@ -87,39 +73,14 @@ public class AuthChannelInterceptor
             String role =
                     jwtUtil.extractRole(token);
 
-            System.out.println(
-                    "USER ID = " + userId
-            );
-
-            System.out.println(
-                    "ROLE = " + role
-            );
-
             accessor.getSessionAttributes()
                     .put("userId", userId);
 
             accessor.getSessionAttributes()
                     .put("role", role);
 
-            // USER ONLINE MARK
-
-            String userKey =
-                    role + "_" + userId;
-
-            onlineUserStore.add(userKey);
-
-            System.out.println(
-                    "ONLINE USER ADDED = "
-                            + userKey
-            );
-
-            accessor.setUser(
-                    new org.springframework.security.authentication
-                            .UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            userDetails.getAuthorities()
-                    )
+            onlineUserStore.add(
+                    role + "_" + userId
             );
         }
 

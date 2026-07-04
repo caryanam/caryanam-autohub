@@ -1,12 +1,15 @@
 package com.autohub.serviceImpl;
 
+import com.autohub.configuration.JwtUtil;
 import com.autohub.dto.*;
+import com.autohub.entity.Customer;
 import com.autohub.entity.CustomerLead;
 import com.autohub.entity.Dealer;
 import com.autohub.entity.Vehicle;
 import com.autohub.enums.CustomerLeadStatus;
 import com.autohub.exception.ResourceNotFoundException;
 import com.autohub.repository.CustomerLeadRepository;
+import com.autohub.repository.CustomerRepository;
 import com.autohub.repository.DealerRepository;
 import com.autohub.repository.VehicleRepository;
 import com.autohub.service.CustomerLeadService;
@@ -16,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -29,15 +33,23 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
     private final VehicleRepository vehicleRepository;
     private final DealerRepository dealerRepository;
     private final ApplicationEventPublisher eventPublisher; // constructor-injected, not @Autowired
+    private final CustomerRepository customerRepository;
+
+    private final JwtUtil jwtUtil;
+
+    private final CustomerLeadRepository customerLeadRepository;
 
     public CustomerLeadServiceImpl(CustomerLeadRepository leadRepository,
                                    VehicleRepository vehicleRepository,
                                    DealerRepository dealerRepository,
-                                   ApplicationEventPublisher eventPublisher) {
+                                   ApplicationEventPublisher eventPublisher, CustomerRepository customerRepository, JwtUtil jwtUtil, CustomerLeadRepository customerLeadRepository) {
         this.leadRepository = leadRepository;
         this.vehicleRepository = vehicleRepository;
         this.dealerRepository = dealerRepository;
         this.eventPublisher = eventPublisher;
+        this.customerRepository = customerRepository;
+        this.jwtUtil = jwtUtil;
+        this.customerLeadRepository = customerLeadRepository;
     }
 
     @Override
@@ -52,6 +64,10 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
         Dealer dealer = dealerRepository.findById(dealerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Dealer not found"));
 
+        Customer customer =
+                customerRepository.findByMobile(leadRequestDTO.getCustomerMobile())
+                        .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String uniquePart = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         String uniqueLeadId = "CAPL" + timestamp + vehicle.getId() + dealerId + uniquePart;
@@ -65,6 +81,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
         lead.setEnquiryDate(LocalDateTime.now());
         lead.setVehicle(vehicle);
         lead.setDealer(dealer);
+        lead.setCustomer(customer);
 
         CustomerLead saved = leadRepository.save(lead);
 
@@ -76,8 +93,8 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
                 saved.getId(),
                 vehicle.getId(),
                 dealerId,
-                saved.getCustomerName(),
-                saved.getCustomerMobile(),
+                saved.getCustomer().getCustomerName(),
+                saved.getCustomer().getMobile(),
                 vehicleDisplayName,
                 dealer.getWhatsapp()
         ));
@@ -88,13 +105,14 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
         return CustomerLeadResponseDTO.builder()
                 .id(saved.getId())
                 .uniqueLeadId(saved.getUniqueLeadId())
-                .customerName(saved.getCustomerName())
-                .customerMobile(saved.getCustomerMobile())
+                .customerName(saved.getCustomer().getCustomerName())
+                .customerMobile(saved.getCustomer().getMobile())
                 .leadStatus(saved.getLeadStatus())
-                .customerCity(saved.getCustomerCity())
+                .customerCity(saved.getCustomer().getCustomerCity())
                 .vehicleName(vehicleDisplayName)
                 .enquiryDate(saved.getEnquiryDate())
                 .dealer(saved.getDealer().getId())
+                .customer(saved.getCustomer())
                 .build();
     }
 
@@ -192,7 +210,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
     }
 
     @Override
-    public CustomerLeadResponseDTO updateLeadStatus(Long leadId, CustomerLeadStatusRequestDTO requestDTO) {
+    public CustomerLeadResponseDTO updateLeadStatus(Long leadId, CustomerLeadStatusRequestDTO requestDTO)  {
 
         CustomerLead lead = leadRepository.findById(leadId)
                 .orElseThrow(() ->
@@ -285,5 +303,48 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
         }
 
         return response;
+    }
+
+
+    private Long validateDealerAccess(
+            String authHeader,
+            Long dealerId) throws AccessDeniedException {
+
+        String token = authHeader.substring(7);
+
+        Long loggedInDealerId =
+                jwtUtil.extractId(token);
+
+        if (!loggedInDealerId.equals(dealerId)) {
+            throw new AccessDeniedException(
+                    "You are not authorized to access this dealer data"
+            );
+        }
+
+        return loggedInDealerId;
+    }
+
+    private void validateLeadAccess(
+            String authHeader,
+            Long leadId) throws AccessDeniedException {
+
+        Long loggedInDealerId =
+                jwtUtil.extractId(
+                        authHeader.substring(7));
+
+        CustomerLead lead =
+                customerLeadRepository.findById(leadId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Lead not found"));
+
+        Long leadDealerId =
+                lead.getDealer().getId();
+
+        if (!leadDealerId.equals(loggedInDealerId)) {
+
+            throw new AccessDeniedException(
+                    "You are not authorized to access this lead"
+            );
+        }
     }
 }

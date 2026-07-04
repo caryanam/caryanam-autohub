@@ -1,7 +1,8 @@
 package com.autohub.repository;
 
-import com.autohub.entity.Admin;
+import com.autohub.entity.Customer;
 import com.autohub.entity.CustomerLead;
+import com.autohub.entity.Dealer;
 import com.autohub.enums.CustomerLeadStatus;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface CustomerLeadRepository extends JpaRepository<CustomerLead,Long> {
@@ -60,5 +60,30 @@ public interface CustomerLeadRepository extends JpaRepository<CustomerLead,Long>
     List<Object[]> getMonthlyLeadAnalytics();
 
 
+    // Dealer can see only lead created customer
 
+    @Query("""
+SELECT DISTINCT c
+FROM CustomerLead cl
+JOIN cl.customer c
+WHERE cl.dealer.id = :dealerId
+AND c IS NOT NULL
+""")
+    List<Customer> findCustomersByDealer(
+            @Param("dealerId") Long dealerId
+    );
+
+    // Customer can see only dealer
+
+    @Query("""
+SELECT DISTINCT d
+FROM CustomerLead cl
+JOIN cl.dealer d
+WHERE cl.customer.id = :customerId
+""")
+    List<Dealer> findDealersByCustomer(
+            @Param("customerId") Long customerId
+    );
+
+    //boolean existsByDealerIdAndCustomerId(Long dealerId,Long customerId);
 }

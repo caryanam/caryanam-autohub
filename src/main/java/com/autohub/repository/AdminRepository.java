@@ -1,8 +1,5 @@
 package com.autohub.repository;
 
-
-
-
 import com.autohub.entity.Admin;
 
 

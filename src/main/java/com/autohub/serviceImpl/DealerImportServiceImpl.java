@@ -3,6 +3,7 @@ package com.autohub.serviceImpl;
 import com.autohub.entity.Dealer;
 import com.autohub.enums.DealerStatus;
 import com.autohub.enums.Role;
+import com.autohub.enums.SubscriptionPlan;
 import com.autohub.repository.DealerRepository;
 import com.autohub.service.DealerImportService;
 import jakarta.transaction.Transactional;
@@ -135,14 +136,19 @@ public class DealerImportServiceImpl
                                     ? email.trim()
                                     : null
                     );
-
-                    dealer.setFreeTrialEndDate(LocalDateTime.now().plusMonths(1));
-
                     dealer.setRole(Role.DEALER);
 
                     dealer.setDealerAccountStatus(DealerStatus.APPROVED);
 
-                    dealer.setSubscriptionActive(false);
+                    dealer.setFreeTrialEndDate(LocalDateTime.now().plusMonths(1));
+
+                    dealer.setSubscriptionPlan(SubscriptionPlan.BASIC);
+                    dealer.setSubscriptionStartDate(LocalDateTime.now());
+                    dealer.setSubscriptionEndDate(LocalDateTime.now().plusMonths(1));
+
+
+                    dealer.setSubscriptionActive(true);
+
 
                     Dealer save = dealerRepository.save(dealer);
 

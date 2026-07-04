@@ -1,5 +1,6 @@
 package com.autohub.controller;
 
+import com.autohub.configuration.JwtUtil;
 import com.autohub.dto.*;
 import com.autohub.service.CustomerLeadService;
 import com.autohub.service.VehicleViewService;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -18,6 +20,9 @@ public class LeadController {
     private final CustomerLeadService leadService;
 
     private final VehicleViewService vehicleViewService;
+
+    private final JwtUtil jwtUtil;
+
 
     // =============== ADD NEW CUSTOMER REGISTRATION OR LEAD ON VEHICLE FROM CUSTOMER =====================
 
@@ -51,13 +56,15 @@ public class LeadController {
     @GetMapping("/all-leads/{dealerId}")
     @Operation(summary = "Get all leads of customer/user API ")
     public ResponseEntity<ResponseDto<List<CustomerLeadResponseDTO>>> getCustomerLeads(
-            @PathVariable Long dealerId) {
+            @PathVariable Long dealerId,@RequestHeader("Authorization") String authHeader) throws AccessDeniedException {
+        validateDealerAccess(authHeader, dealerId);
 
         List<CustomerLeadResponseDTO> response = leadService.getDealerLeads(dealerId);
 
         return ResponseEntity.ok(new ResponseDto<>(200,"Customer All Leads Fetched Successfully",response)
         );
     }
+
 
     // ================= UPDATE REGISTRATION OR LEADS STATUS=================
 
@@ -71,13 +78,24 @@ public class LeadController {
         return ResponseEntity.ok(new ResponseDto<>(200,"Lead status successfully",response));
     }
 
-    // =============== ADD CUSTOMER DASHBOARD =====================
 
-    @GetMapping("/customer-dashboard")
-    @Operation(summary = "Customer Dashboard")
-    public ResponseEntity<?> getCustomerDashboard() {
+    private Long validateDealerAccess(
+            String authHeader,
+            Long dealerId) throws AccessDeniedException {
 
-        return ResponseEntity.ok("Customer Dashboard Fetch Successfully");
+        String token = authHeader.substring(7);
+
+        Long loggedInDealerId =
+                jwtUtil.extractId(token);
+
+        if (!loggedInDealerId.equals(dealerId)) {
+            throw new AccessDeniedException(
+                    "You are not authorized to access this dealer data"
+            );
+        }
+
+        return loggedInDealerId;
     }
+
 
 }

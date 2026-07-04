@@ -1,7 +1,6 @@
 package com.autohub.entity;
 
 import com.autohub.enums.CustomerLeadStatus;
-import com.autohub.enums.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -37,4 +36,10 @@ public class CustomerLead {
 
     @ManyToOne
     private Dealer dealer;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
+
 }

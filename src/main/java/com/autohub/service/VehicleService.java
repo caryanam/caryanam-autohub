@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @Service
@@ -16,15 +17,15 @@ public interface VehicleService {
     VehicleResponseDTO addVehicleWithData(VehicleRequestDTO vehicleRequestDTO,List<MultipartFile> images,List<MultipartFile> videos,
             Long dealerId) throws IOException;
 
-    VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request);
+    VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request,Long loggedInDealerId) throws AccessDeniedException;
 
-    VehicleResponseDTO updateVehicleStatus(Long id, VehicleStatusRequestDTO request);
+    VehicleResponseDTO updateVehicleStatus(Long id, VehicleStatusRequestDTO request,Long loggedInDealerId) throws AccessDeniedException;
 
-    void deleteVehicle(Long id);
+    void deleteVehicle(Long id,Long loggedInDealerId) throws AccessDeniedException;
 
     List<VehicleResponseDTO> getAllVehicleByDealerId(Long dealerId);
 
-    VehicleResponseDTO getVehicleById(Long vehicleId);
+    VehicleResponseDTO getVehicleById(Long vehicleId,Long loggedInDealerId) throws AccessDeniedException;
 
     List<VehicleResponseDTO> getLatestFeaturedVehicles(Long customerId);
 

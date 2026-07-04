@@ -10,7 +10,7 @@ public class CustomerLeadRequestDTO {
     private String customerName;
 
     @NotBlank(message = "Customer Mobile is Required")
-    private String customerMobile;
+    private String customerMobile; //same as registration time use
 
     @NotBlank(message = "Customer City is Required")
     private String customerCity;

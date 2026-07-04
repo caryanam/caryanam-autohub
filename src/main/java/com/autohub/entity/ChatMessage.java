@@ -1,6 +1,5 @@
 package com.autohub.entity;
 
-
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -39,12 +38,9 @@ public class ChatMessage {
 
     private String groupId;
 
-
     @Column(columnDefinition = "TEXT")
     private String content;
 
     private LocalDateTime sentAt =
             LocalDateTime.now();
 }
-
-

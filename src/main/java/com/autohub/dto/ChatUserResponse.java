@@ -24,5 +24,6 @@ public class ChatUserResponse {
     private Long unreadCount;
 
     private Boolean online;
-}
 
+    private Boolean group;
+}

@@ -1,6 +1,5 @@
 package com.autohub.configuration;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -13,20 +12,20 @@ import org.springframework.web.socket.config.annotation.*;
 public class WebSocketConfig
         implements WebSocketMessageBrokerConfigurer {
 
-
     private final AuthChannelInterceptor interceptor;
 
     @Override
     public void configureClientInboundChannel(
             ChannelRegistration registration) {
 
-        registration.interceptors(interceptor);
+        registration.interceptors(
+                interceptor
+        );
     }
+
     @Override
     public void configureMessageBroker(
             MessageBrokerRegistry registry) {
-
-        //registry.enableSimpleBroker("/queue");
 
         registry.enableSimpleBroker(
                 "/queue",
@@ -46,6 +45,5 @@ public class WebSocketConfig
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
-
 }
 

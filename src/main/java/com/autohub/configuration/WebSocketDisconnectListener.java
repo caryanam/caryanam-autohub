@@ -6,7 +6,6 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
-
 @Component
 @RequiredArgsConstructor
 public class WebSocketDisconnectListener {
@@ -14,15 +13,17 @@ public class WebSocketDisconnectListener {
     private final OnlineUserStore onlineUserStore;
 
     @EventListener
-    public void handleDisconnect(
-            SessionDisconnectEvent event) {
+    public void disconnect(
+            SessionDisconnectEvent event){
 
         StompHeaderAccessor accessor =
                 StompHeaderAccessor.wrap(
                         event.getMessage()
                 );
 
-        if (accessor.getSessionAttributes() == null) {
+        if(accessor.getSessionAttributes()
+                == null){
+
             return;
         }
 
@@ -36,14 +37,12 @@ public class WebSocketDisconnectListener {
                         .getSessionAttributes()
                         .get("role");
 
-        if (userId != null && role != null) {
+        if(userId != null
+                &&
+                role != null){
 
             onlineUserStore.remove(
                     role + "_" + userId
-            );
-
-            System.out.println(
-                    role + "_" + userId + " OFFLINE"
             );
         }
     }

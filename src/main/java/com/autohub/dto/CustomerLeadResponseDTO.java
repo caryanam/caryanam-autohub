@@ -1,5 +1,6 @@
 package com.autohub.dto;
 
+import com.autohub.entity.Customer;
 import com.autohub.enums.CustomerLeadStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,4 +32,6 @@ public class CustomerLeadResponseDTO {
     private String vehicleName;
 
     private Long dealer;
+
+    private Customer customer;
 }

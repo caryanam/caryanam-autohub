@@ -2,5 +2,11 @@ package com.autohub.configuration;
 
 public class ChatConstants {
 
-    public static final String ALL_DEALERS_GROUP ="ALL_DEALERS_GROUP";
+    private ChatConstants() {}
+
+    public static final String DEALER_GROUP_ID =
+            "ALL_DEALERS_GROUP";
+
+    public static final String DEALER_GROUP_NAME =
+            "CARYANAM DEALERS 🚘";
 }

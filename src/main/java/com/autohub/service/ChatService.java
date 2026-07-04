@@ -7,11 +7,16 @@ import com.autohub.entity.ChatMessage;
 import java.util.List;
 
 public interface ChatService {
-    void sendMessage(Long senderId,
-                     String senderRole,
-                     ChatMessageRequest request);
 
-    List<ChatMessage> getHistory(String roomId);
+    void sendMessage(
+            Long senderId,
+            String senderRole,
+            ChatMessageRequest request
+    );
+
+    List<ChatMessage> getHistory(
+            String roomId
+    );
 
     String generateRoomId(
             Long senderId,
@@ -30,20 +35,11 @@ public interface ChatService {
             String role
     );
 
-
     void markAsRead(
             String roomId,
             Long receiverId,
             String receiverRole
     );
-
-    void sendGroupMessage(
-            Long senderId,
-            String senderRole,
-            String content
-    );
-
-    List<ChatMessage> getGroupHistory();
 
     void sendGroupMessage(
             Long senderId,
@@ -54,8 +50,4 @@ public interface ChatService {
     List<ChatMessage> getGroupHistory(
             String groupId
     );
-
-
-
 }
-

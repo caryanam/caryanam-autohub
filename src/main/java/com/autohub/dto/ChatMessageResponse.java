@@ -1,6 +1,5 @@
 package com.autohub.dto;
 
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -29,8 +28,4 @@ public class ChatMessageResponse {
     private LocalDateTime sentAt;
 
     private LocalDateTime readAt;
-
-
-
 }
-
