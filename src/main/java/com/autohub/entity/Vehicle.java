@@ -83,13 +83,7 @@ public class Vehicle {
 
     private String dealerContactNumber;
 
-    private Long subLocalityId;
 
-//    private  String dealerContactEmail;
-//
-//    private String dealerWhatsappNumber;
-//
-//    private String dealerBusinessName;
 
     @ManyToOne
     @JoinColumn(name = "dealerId")

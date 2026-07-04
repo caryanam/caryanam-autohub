@@ -36,7 +36,6 @@ public class OlxImportServiceImpl implements OlxImportService {
     @Value("${spring.server.url}")
     private String serverUrl;
 
-
     @Override
     public void importData(MultipartFile excel,
                            MultipartFile zip) throws Exception {
@@ -63,109 +62,144 @@ public class OlxImportServiceImpl implements OlxImportService {
                 }
 
                 String carName =
-                        getStringValue(formatter, row, 1);
+                        getStringValue(formatter, row, 2);
 
                 if (carName.isBlank()) {
                     continue;
                 }
 
+                //Dealer ID
+                Long dealerId =
+                        getLongValue(formatter, row, 0);
+
+                Dealer dealer =
+                        dealerRepository.findById(dealerId)
+                                .orElseThrow(() ->
+                                        new RuntimeException(
+                                                "Dealer not found : "
+                                                        + dealerId));
+
                 Vehicle car = new Vehicle();
-
-                Long dealerId = getLongValue(formatter, row, 0);
-
-                Dealer dealer = dealerRepository.findById(dealerId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Dealer not found with id : " + dealerId));
 
                 car.setDealer(dealer);
 
+                // Location
                 car.setCity(
                         getStringValue(formatter, row, 1));
 
+                // Car Name
                 car.setModel(
                         getStringValue(formatter, row, 2));
 
+                // Variant
                 car.setVariant(
                         getStringValue(formatter, row, 3));
 
+                // Brand
                 car.setBrand(
                         getStringValue(formatter, row, 4));
 
+                // Description
                 car.setVehicleDescription(
                         getStringValue(formatter, row, 5));
 
+                // Fuel Type
                 String fuelType =
                         getStringValue(formatter, row, 6);
 
                 if (fuelType.length() > 100) {
-                    fuelType = fuelType.substring(0, 100);
+                    fuelType =
+                            fuelType.substring(0, 100);
                 }
 
                 car.setFuelType(fuelType);
 
+                // KM Driven
                 car.setKilometerDriven(
                         getLongValue(formatter, row, 7));
 
+                // Price
                 car.setAskingPrice(
                         getDoubleValue(formatter, row, 8));
 
+                // Owners
                 car.setOwnershipDetails(
-                        getLongValue(formatter, row, 9).intValue());
+                        getLongValue(formatter, row, 9)
+                                .intValue());
 
+                // Model Year
                 car.setRegistrationYear(
-                        getLongValue(formatter, row, 10).intValue());
+                        getLongValue(formatter, row, 10)
+                                .intValue());
 
-                car.setSubLocalityId(
-                        getLongValue(formatter, row, 12));
-
+                // Dealer Contact Name
                 car.setDealerContactName(
-                        getStringValue(formatter, row, 32));
+                        getStringValue(formatter, row, 29));
 
+                // Dealer Contact Number
                 car.setDealerContactNumber(
-                        getStringValue(formatter, row, 33));
+                        getStringValue(formatter, row, 30));
 
+                //Finance Availability
                 car.setFinanceAvailability(false);
 
-                car.setCreatedAt(LocalDateTime.now());
+                //Vehicle Type
+                car.setVehicleType(
+                        VehicleType.NON_PREMIUM);
 
-                car.setVehicleType(VehicleType.NON_PREMIUM);
+                //Vehicle Status
+                car.setVehicleStatus(
+                        VehicleStatus.ACTIVE);
 
-                car.setVehicleStatus(VehicleStatus.ACTIVE);
+                //Create At
+                car.setCreatedAt(
+                        LocalDateTime.now());
 
+                // Images
                 int imageCount = 0;
 
-                for (int col = 13; col <= 30; col++) {
+                for (int col = 11;
+                     col <= 28;
+                     col++) {
 
                     String imageName =
-                            "row_" + (rowNum + 1) +
-                                    "_col_" + col + ".jpg";
+                            "row_" + (rowNum + 1)
+                                    + "_col_" + col
+                                    + ".jpg";
 
                     File imageFile =
-                            new File(uploadPath
-                                    + "/Images_Processed/"
-                                    + imageName);
+                            new File(
+                                    uploadPath
+                                            + "/Images_Processed/"
+                                            + imageName);
 
                     if (imageFile.exists()) {
 
                         VehicleMedia image =
                                 new VehicleMedia();
 
-                        System.out.println("Checking : " + imageFile.getAbsolutePath());
-                        System.out.println("Exists : " + imageFile.exists());
+                        image.setFileName(
+                                imageName);
 
-                        image.setFileName(imageName);
-                        image.setFileType("jpg"); // किंवा extension काढून टाक
-                        image.setFilePath("/uploads/olx/Images_Processed/" + imageName);
-                        image.setMediaType("IMAGE");
-                        image.setUploadedAt(LocalDateTime.now());
+                        image.setFileType(
+                                "jpg");
+
+                        image.setFilePath(
+                                "/uploads/olx/Images_Processed/"
+                                        + imageName);
+
+                        image.setMediaType(
+                                "IMAGE");
+
+                        image.setUploadedAt(
+                                LocalDateTime.now());
 
                         image.setVehicle(car);
 
-                        car.getMediaList().add(image);
+                        car.getMediaList()
+                                .add(image);
 
                         imageCount++;
-
                     }
                 }
 
@@ -174,13 +208,162 @@ public class OlxImportServiceImpl implements OlxImportService {
                 System.out.println(
                         "Imported Row : "
                                 + rowNum
-                                + " | Car : "
-                                + carName
+                                + " | Vehicle : "
+                                + car.getBrand()
+                                + " "
+                                + car.getModel()
                                 + " | Images : "
                                 + imageCount);
             }
         }
     }
+
+
+
+//    @Override
+//    public void importData(MultipartFile excel,
+//                           MultipartFile zip) throws Exception {
+//
+//        String uploadPath = "uploads/olx";
+//
+//        zipExtractor.unzip(zip, uploadPath);
+//
+//        try (Workbook workbook =
+//                     WorkbookFactory.create(excel.getInputStream())) {
+//
+//            Sheet sheet = workbook.getSheetAt(0);
+//
+//            DataFormatter formatter = new DataFormatter();
+//
+//            for (int rowNum = 1;
+//                 rowNum <= sheet.getLastRowNum();
+//                 rowNum++) {
+//
+//                Row row = sheet.getRow(rowNum);
+//
+//                if (isRowEmpty(row)) {
+//                    continue;
+//                }
+//
+//                String carName =
+//                        getStringValue(formatter, row, 1);
+//
+//                if (carName.isBlank()) {
+//                    continue;
+//                }
+//
+//                Vehicle car = new Vehicle();
+//
+//                Long dealerId = getLongValue(formatter, row, 0);
+//
+//                Dealer dealer = dealerRepository.findById(dealerId)
+//                        .orElseThrow(() ->
+//                                new RuntimeException(
+//                                        "Dealer not found with id : " + dealerId));
+//
+//                car.setDealer(dealer);
+//
+//                car.setCity(
+//                        getStringValue(formatter, row, 1));
+//
+//                car.setModel(
+//                        getStringValue(formatter, row, 2));
+//
+//                car.setVariant(
+//                        getStringValue(formatter, row, 3));
+//
+//                car.setBrand(
+//                        getStringValue(formatter, row, 4));
+//
+//                car.setVehicleDescription(
+//                        getStringValue(formatter, row, 5));
+//
+//                String fuelType =
+//                        getStringValue(formatter, row, 6);
+//
+//                if (fuelType.length() > 100) {
+//                    fuelType = fuelType.substring(0, 100);
+//                }
+//
+//                car.setFuelType(fuelType);
+//
+//                car.setKilometerDriven(
+//                        getLongValue(formatter, row, 7));
+//
+//                car.setAskingPrice(
+//                        getDoubleValue(formatter, row, 8));
+//
+//                car.setOwnershipDetails(
+//                        getLongValue(formatter, row, 9).intValue());
+//
+//                car.setRegistrationYear(
+//                        getLongValue(formatter, row, 10).intValue());
+//
+//                car.setSubLocalityId(
+//                        getLongValue(formatter, row, 12));
+//
+//                car.setDealerContactName(
+//                        getStringValue(formatter, row, 32));
+//
+//                car.setDealerContactNumber(
+//                        getStringValue(formatter, row, 33));
+//
+//                car.setFinanceAvailability(false);
+//
+//                car.setCreatedAt(LocalDateTime.now());
+//
+//                car.setVehicleType(VehicleType.NON_PREMIUM);
+//
+//                car.setVehicleStatus(VehicleStatus.ACTIVE);
+//
+//                int imageCount = 0;
+//
+//                for (int col = 13; col <= 30; col++) {
+//
+//                    String imageName =
+//                            "row_" + (rowNum + 1) +
+//                                    "_col_" + col + ".jpg";
+//
+//                    File imageFile =
+//                            new File(uploadPath
+//                                    + "/Images_Processed/"
+//                                    + imageName);
+//
+//                    if (imageFile.exists()) {
+//
+//                        VehicleMedia image =
+//                                new VehicleMedia();
+//
+//                        System.out.println("Checking : " + imageFile.getAbsolutePath());
+//                        System.out.println("Exists : " + imageFile.exists());
+//
+//                        image.setFileName(imageName);
+//                        image.setFileType("jpg"); // किंवा extension काढून टाक
+//                        image.setFilePath("/uploads/olx/Images_Processed/" + imageName);
+//                        image.setMediaType("IMAGE");
+//                        image.setUploadedAt(LocalDateTime.now());
+//
+//                        image.setVehicle(car);
+//
+//                        car.getMediaList().add(image);
+//
+//                        imageCount++;
+//
+//                    }
+//                }
+//
+//                vehicleRepository.save(car);
+//
+//                System.out.println(
+//                        "Imported Row : "
+//                                + rowNum
+//                                + " | Car : "
+//                                + carName
+//                                + " | Images : "
+//                                + imageCount);
+//            }
+//        }
+//    }
 
     @Override
     public CarResponse getCar(Long id) {
