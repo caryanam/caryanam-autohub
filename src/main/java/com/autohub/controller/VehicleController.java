@@ -7,7 +7,10 @@ import com.autohub.dto.VehicleStatusRequestDTO;
 import com.autohub.enums.VehicleStatus;
 import com.autohub.service.VehicleService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,6 +22,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/vehicle")
@@ -26,28 +30,46 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+    private final Validator validator;
 
     // ================= ADD VEHICLE INFO=================
 
     @PostMapping(value = "/add/{dealerId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Add new vehicle by dealer after purchased subscription plan API ")
     public ResponseEntity<ResponseDto> addVehicle(
-           @Valid @RequestPart("vehicle")
+           @RequestPart("vehicle")
             String vehicleJson,
             @RequestPart(value = "images",required = false)
             List<MultipartFile> images,
             @RequestPart(value = "videos",required = false)
             List<MultipartFile> videos, @PathVariable Long dealerId) throws IOException {
-
-
         ObjectMapper mapper = new ObjectMapper();
 
-        VehicleRequestDTO vehicleRequestDTO =mapper.readValue(vehicleJson,VehicleRequestDTO.class);
+        VehicleRequestDTO vehicleRequestDTO =
+                mapper.readValue(vehicleJson, VehicleRequestDTO.class);
 
-        VehicleResponseDTO response =vehicleService.addVehicleWithData(vehicleRequestDTO,images,videos,dealerId);
+        Set<ConstraintViolation<VehicleRequestDTO>> violations =
+                validator.validate(vehicleRequestDTO);
 
-        return new ResponseEntity<>( new ResponseDto<>(201,"Vehicle Added Successfully",response),HttpStatus.CREATED);
-    }
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
+
+        VehicleResponseDTO response =
+                vehicleService.addVehicleWithData(
+                        vehicleRequestDTO,
+                        images,
+                        videos,
+                        dealerId
+                );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ResponseDto<>(
+                        201,
+                        "Vehicle Added Successfully",
+                        response
+                ));
+}
 
 
     // ================= UPDATE VEHICLE INFO=================

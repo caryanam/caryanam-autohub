@@ -1,6 +1,7 @@
 package com.autohub.exception;
 
 import com.autohub.dto.ResponseDto;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -54,5 +55,27 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ResponseDto> handleWishlistAlreadyExists(WishlistAlreadyExistsException ex ) {
 
         return new ResponseEntity<>(new ResponseDto(409, ex.getMessage(), null), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<?> handleConstraintViolationException(
+            ConstraintViolationException ex) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        ex.getConstraintViolations().forEach(error -> {
+            String field =
+                    error.getPropertyPath().toString();
+
+            errors.put(field, error.getMessage());
+        });
+
+        return ResponseEntity.badRequest().body(
+                Map.of(
+                        "status", 400,
+                        "message", "Validation Failed",
+                        "errors", errors
+                )
+        );
     }
 }
