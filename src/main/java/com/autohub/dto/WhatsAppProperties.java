@@ -4,10 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-/**
- * Strongly-typed binding for whatsapp.* properties in application.properties.
- * @Validated ensures the app fails fast at startup if mandatory config is missing.
- */
 @ConfigurationProperties(prefix = "whatsapp")
 @Validated
 public record WhatsAppProperties(

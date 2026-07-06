@@ -10,10 +10,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * Audit trail of every WhatsApp template message dispatch attempt (success or failure).
- * Critical for support/debugging: "Dealer says they never got a WhatsApp" -> check this table.
- */
 @Entity
 @Table(name = "whatsapp_message_log", indexes = {
         @Index(name = "idx_wa_log_lead_id", columnList = "lead_id"),

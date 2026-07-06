@@ -12,12 +12,7 @@ import org.springframework.web.client.ResourceAccessException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * RetryTemplate: 3 attempts, exponential backoff (1s -> 2s -> 4s, capped at 10s).
- * Only retries on transient failures (5xx, network/timeout issues) - NOT on 4xx
- * (e.g. invalid template, bad mobile number), which are permanent failures and would
- * just waste attempts.
- */
+
 @Configuration
 public class RetryConfig {
 

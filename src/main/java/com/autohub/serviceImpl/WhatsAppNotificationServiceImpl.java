@@ -16,14 +16,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-/**
- * Core business logic for dispatching the "New Lead Generated" WhatsApp notification
- * and persisting an audit log entry regardless of outcome.
- *
- * IMPORTANT: this runs on the async executor, AFTER the lead transaction has already
- * committed. Any exception here must NEVER be allowed to affect the lead record -
- * we use a fresh, independent transaction (REQUIRES_NEW) purely for writing the log row.
- */
 @Service
 @Slf4j
 public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationService {
@@ -112,10 +104,6 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
         }
     }
 
-    /**
-     * Normalizes dealer number to E.164-ish digits-only format Meta expects (no '+', no spaces).
-     * Adjust country-code prefixing logic to match how numbers are actually stored in your DB.
-     */
     private String normalizeToE164(String rawNumber) {
         String digitsOnly = rawNumber.replaceAll("[^0-9]", "");
         if (digitsOnly.length() == 10) {
@@ -125,11 +113,7 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
         return digitsOnly;
     }
 
-    /**
-     * Persists the audit log in its OWN independent transaction.
-     * REQUIRES_NEW guarantees this write commits/rollbacks completely independently
-     * of anything else - per requirement #8, nothing here can ever roll back the lead.
-     */
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void persistLog(LeadCreatedEvent event, WhatsappMessageStatus status, String messageId,
                            String requestPayload, String responsePayload) {

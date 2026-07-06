@@ -11,10 +11,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.lang.reflect.Method;
 
-/**
- * Dedicated thread pool for WhatsApp notification dispatch so that a slow/unresponsive
- * Meta API never starves the application's main request-handling threads.
- */
 @Configuration
 @Slf4j
 public class AsyncConfig implements AsyncConfigurer {

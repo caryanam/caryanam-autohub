@@ -32,7 +32,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
     private final CustomerLeadRepository leadRepository;
     private final VehicleRepository vehicleRepository;
     private final DealerRepository dealerRepository;
-    private final ApplicationEventPublisher eventPublisher; // constructor-injected, not @Autowired
+    private final ApplicationEventPublisher eventPublisher;
     private final CustomerRepository customerRepository;
 
     private final JwtUtil jwtUtil;
