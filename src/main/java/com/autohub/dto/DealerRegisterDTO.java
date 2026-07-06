@@ -7,12 +7,29 @@ import lombok.Data;
 public class DealerRegisterDTO {
 
     @NotBlank(message = "Business Name is Required")
+    @Size(
+            min = 3,
+            max = 100,
+            message = "Business Name must be between 3 and 100 characters"
+    )
     private String businessName;
 
     @NotBlank(message = "Owner Name is Required")
-    @Size(min = 3, max = 100,message = "Business Name must be between 3 and 100 characters")
+    @Size(
+            min = 3,
+            max = 100,
+            message = "Owner Name must be between 3 and 100 characters"
+    )
+    @Pattern(
+            regexp = "^[A-Za-z ]+$",
+            message = "Owner Name must contain only alphabets and spaces"
+    )
     private String ownerName;
 
+    @Pattern(
+            regexp = "^$|^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$",
+            message = "GST Number must be a valid 15-digit Indian GST Number"
+    )
     private String gstNumber;
 
     @NotNull(message = "Years In Business is Required")
@@ -62,20 +79,33 @@ public class DealerRegisterDTO {
     private String address;
 
     @NotBlank(message = "City is Required")
-    @Size(min = 2, max = 50,
-            message = "City must be between 2 and 50 characters")
+    @Size(
+            min = 3,
+            max = 50,
+            message = "City name must be between 3 and 50 characters"
+    )
+    @Pattern(
+            regexp = "^[A-Za-z ]+$",
+            message = "City name must contain only alphabets and spaces"
+    )
     private String city;
 
     @NotBlank(message = "State is Required")
-    @Size(min = 2, max = 50,
-            message = "State must be between 2 and 50 characters")
-
+    @Size(
+            min = 3,
+            max = 50,
+            message = "State name must be between 3 and 50 characters"
+    )
+    @Pattern(
+            regexp = "^[A-Za-z ]+$",
+            message = "State name must contain only alphabets and spaces"
+    )
     private String state;
 
     @NotBlank(message = "PinCode is Required")
     @Pattern(
             regexp = "^[1-9][0-9]{5}$",
-            message = "PinCode must be a valid 6-digit Indian PIN Code"
+            message = "Pincode must be a valid 6-digit PIN Code"
     )
     private String pinCode;
 

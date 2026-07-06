@@ -26,10 +26,14 @@ public class VehicleRequestDTO {
 
     @NotNull(message = "Asking Price is Required")
     @Positive(message = "Asking Price must be greater than 0")
+    @DecimalMin(
+            value = "10000",
+            message = "Asking Price must be at least ₹10,000"
+    )
     private Double askingPrice;
 
     @NotNull(message = "Kilometer Driven is Required")
-    @Positive(message = "Kilometer Driven must be greater than 0")
+    @PositiveOrZero(message = "Kilometer Driven cannot be negative")
     private Long kilometerDriven;
 
     @NotBlank(message = "Fuel Type is Required")
@@ -73,7 +77,15 @@ public class VehicleRequestDTO {
     private Boolean financeAvailability;
 
     @NotBlank(message = "Vehicle Description is Required")
-    @Size(min = 10, max = 1000,message = "Vehicle Description must be between 10 and 1000 characters")
+    @Size(
+            min = 20,
+            max = 5000,
+            message = "Vehicle Description must be between 20 and 5000 characters"
+    )
+    @Pattern(
+            regexp = ".*[A-Za-z0-9].*",
+            message = "Vehicle Description must contain meaningful text"
+    )
     private String vehicleDescription;
 
     @NotNull(message = "Vehicle Type is Required")
