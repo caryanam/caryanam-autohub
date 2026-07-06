@@ -378,18 +378,11 @@ public class VehicleServiceImpl implements VehicleService {
 
 
     @Override
-    public VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request,Long loggedInDealerId) throws AccessDeniedException {
+    public VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request){
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
                         new ResourceNotFoundException("Vehicle not found with id: " + id));
 
-
-        if (!vehicle.getDealer().getId()
-                .equals(loggedInDealerId)) {
-
-            throw new AccessDeniedException(
-                    "You are not authorized to update this vehicle");
-        }
 
         vehicle.setBrand(request.getBrand());
         vehicle.setModel(request.getModel());
@@ -429,18 +422,12 @@ public class VehicleServiceImpl implements VehicleService {
 
 
     @Override
-    public VehicleResponseDTO updateVehicleStatus(Long id,VehicleStatusRequestDTO request,Long loggedInDealerId) throws AccessDeniedException {
+    public VehicleResponseDTO updateVehicleStatus(Long id,VehicleStatusRequestDTO request){
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Vehicle not found"));
 
-        if (!vehicle.getDealer().getId()
-                .equals(loggedInDealerId)) {
-
-            throw new AccessDeniedException(
-                    "You are not authorized to update this vehicle");
-        }
 
         if (!request.getStatus().equalsIgnoreCase("ACTIVE")
                 && !request.getStatus().equalsIgnoreCase("INACTIVE") && !request.getStatus().equalsIgnoreCase("FEATURED")) {
@@ -460,17 +447,10 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional
-    public void deleteVehicle(Long id,Long loggedInDealerId) throws AccessDeniedException {
+    public void deleteVehicle(Long id){
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Vehicle not found with id: " + id));
-
-        if (!vehicle.getDealer().getId()
-                .equals(loggedInDealerId)) {
-
-            throw new AccessDeniedException(
-                    "You are not authorized to delete this vehicle");
-        }
 
         leadRepository.deleteLeadsByVehicleId(vehicle.getId());
 
@@ -546,20 +526,13 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
-    public VehicleResponseDTO getVehicleById(Long vehicleId,Long loggedInDealerId) throws AccessDeniedException {
+    public VehicleResponseDTO getVehicleById(Long vehicleId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Vehicle not found with id : " + vehicleId));
 
-
-        if (!vehicle.getDealer().getId()
-                .equals(loggedInDealerId)) {
-
-            throw new AccessDeniedException(
-                    "You are not authorized to delete this vehicle");
-        }
 
 
         return VehicleResponseDTO.builder()

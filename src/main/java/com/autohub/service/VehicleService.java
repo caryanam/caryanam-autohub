@@ -17,15 +17,15 @@ public interface VehicleService {
     VehicleResponseDTO addVehicleWithData(VehicleRequestDTO vehicleRequestDTO,List<MultipartFile> images,List<MultipartFile> videos,
             Long dealerId) throws IOException;
 
-    VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request,Long loggedInDealerId) throws AccessDeniedException;
+    VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request);
 
-    VehicleResponseDTO updateVehicleStatus(Long id, VehicleStatusRequestDTO request,Long loggedInDealerId) throws AccessDeniedException;
+    VehicleResponseDTO updateVehicleStatus(Long id, VehicleStatusRequestDTO request);
 
-    void deleteVehicle(Long id,Long loggedInDealerId) throws AccessDeniedException;
+    void deleteVehicle(Long id);
 
     List<VehicleResponseDTO> getAllVehicleByDealerId(Long dealerId);
 
-    VehicleResponseDTO getVehicleById(Long vehicleId,Long loggedInDealerId) throws AccessDeniedException;
+    VehicleResponseDTO getVehicleById(Long vehicleId);
 
     List<VehicleResponseDTO> getLatestFeaturedVehicles(Long customerId);
 

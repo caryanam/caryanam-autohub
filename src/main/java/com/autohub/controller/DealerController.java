@@ -1,6 +1,5 @@
 package com.autohub.controller;
 
-import com.autohub.configuration.JwtUtil;
 import com.autohub.dto.*;
 import com.autohub.service.DealerService;
 
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -26,7 +24,6 @@ public class DealerController {
 
     private final DealerService dealerService;
     private final ObjectMapper objectMapper;
-    private final JwtUtil jwtUtil;
 
     // ================= REGISTER DEALER =================
 
@@ -49,9 +46,7 @@ public class DealerController {
 
     @PutMapping("/update-profile/{dealerId}")
     @Operation(summary = "Update Dealer Profile API")
-    public ResponseEntity<ResponseDto<DealerProfileResponseDTO>> updateDealerProfile(@PathVariable Long dealerId,@Valid @RequestBody UpdateDealerProfileRequestDTO request,@RequestHeader("Authorization") String authHeader) throws AccessDeniedException {
-
-        validateDealerAccess(authHeader, dealerId);
+    public ResponseEntity<ResponseDto<DealerProfileResponseDTO>> updateDealerProfile(@PathVariable Long dealerId,@Valid @RequestBody UpdateDealerProfileRequestDTO request) {
 
         DealerProfileResponseDTO dealerResponseDTO = dealerService.updateDealerProfile(dealerId, request);
 
@@ -61,11 +56,9 @@ public class DealerController {
     // ========== GET DEALER  BY ID ================
     @GetMapping("/dealer-profile/{dealerId}")
     @Operation(summary = "Get Dealer Profile By Id API ")
-    public ResponseEntity<ResponseDto<DealerResponseDTO>>   getDealerById(@RequestHeader("Authorization") String authHeader,@PathVariable Long dealerId) throws AccessDeniedException {
+    public ResponseEntity<ResponseDto<DealerResponseDTO>>   getDealerById(@PathVariable Long dealerId) {
 
-        validateDealerAccess(authHeader, dealerId);
-
-        DealerResponseDTO dealerProfile = dealerService.getDealerProfile(dealerId);
+          DealerResponseDTO dealerProfile = dealerService.getDealerProfile(dealerId);
 
         return new ResponseEntity<>(new ResponseDto<>(200,"Dealer Profile Fetch Successfully",dealerProfile),HttpStatus.OK);
     }
@@ -75,8 +68,8 @@ public class DealerController {
 
     @GetMapping("/dashboard/{dealerId}")
     @Operation(summary = "Dealer Dashboard API Total Vehicles, Featured Vehicles, Total Leads, Vehicle Views")
-    public ResponseEntity<DashboardResponseDTO>   getDashboard(@PathVariable Long dealerId,@RequestHeader("Authorization") String authHeader) throws AccessDeniedException {
-        validateDealerAccess(authHeader, dealerId);
+    public ResponseEntity<DashboardResponseDTO>   getDashboard(@PathVariable Long dealerId) {
+
         return ResponseEntity.ok( dealerService.getDashboard(dealerId));
     }
 
@@ -97,9 +90,8 @@ public class DealerController {
 
     @GetMapping("/current-plan/{dealerId}")
     @Operation(summary = "Get Current Dealer Active Subscription Plan API")
-    public ResponseEntity<ResponseDto<DealerCurrentSubscriptionPlanDTO>> getDealerCurrentSubscription(@RequestHeader("Authorization") String authHeader,@PathVariable Long dealerId) throws AccessDeniedException {
+    public ResponseEntity<ResponseDto<DealerCurrentSubscriptionPlanDTO>> getDealerCurrentSubscription(@PathVariable Long dealerId)  {
 
-        validateDealerAccess(authHeader, dealerId);
 
         DealerCurrentSubscriptionPlanDTO dealerSubscriptionPlan =dealerService.getDealerCurrentSubscriptionPlan(dealerId);
 
@@ -112,25 +104,6 @@ public class DealerController {
         );
     }
 
-
-
-    private Long validateDealerAccess(
-            String authHeader,
-            Long dealerId) throws AccessDeniedException {
-
-        String token = authHeader.substring(7);
-
-        Long loggedInDealerId =
-                jwtUtil.extractId(token);
-
-        if (!loggedInDealerId.equals(dealerId)) {
-            throw new AccessDeniedException(
-                    "You are not authorized to access this dealer data"
-            );
-        }
-
-        return loggedInDealerId;
-    }
 
 
 }

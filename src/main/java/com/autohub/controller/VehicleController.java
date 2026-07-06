@@ -1,6 +1,5 @@
 package com.autohub.controller;
 
-import com.autohub.configuration.JwtUtil;
 import com.autohub.dto.ResponseDto;
 import com.autohub.dto.VehicleRequestDTO;
 import com.autohub.dto.VehicleResponseDTO;
@@ -28,22 +27,18 @@ public class VehicleController {
 
     private final VehicleService vehicleService;
 
-    private final JwtUtil jwtUtil;
-
     // ================= ADD VEHICLE INFO=================
 
     @PostMapping(value = "/add/{dealerId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Add new vehicle by dealer after purchased subscription plan API ")
     public ResponseEntity<ResponseDto> addVehicle(
-            @RequestHeader("Authorization") String authHeader,
            @Valid @RequestPart("vehicle")
             String vehicleJson,
             @RequestPart(value = "images",required = false)
             List<MultipartFile> images,
             @RequestPart(value = "videos",required = false)
-            List<MultipartFile> videos, @PathVariable Long dealerId)throws IOException {
+            List<MultipartFile> videos, @PathVariable Long dealerId) throws IOException {
 
-        validateDealerAccess(authHeader, dealerId);
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -60,12 +55,9 @@ public class VehicleController {
     @PutMapping("/update/{vehicleId}")
     @Operation(summary = "Update vehicle info by dealer API")
     public ResponseEntity<ResponseDto<VehicleResponseDTO>> updateVehicle(@PathVariable("vehicleId") Long id,
-                                                                         @RequestBody VehicleRequestDTO request,@RequestHeader("Authorization") String authHeader
-                                                                         ) throws java.nio.file.AccessDeniedException {
-        Long loggedInDealerId =
-                jwtUtil.extractId(authHeader.substring(7));
+                                                                         @RequestBody VehicleRequestDTO request) {
 
-        VehicleResponseDTO response = vehicleService.updateVehicle(id, request,loggedInDealerId);
+        VehicleResponseDTO response = vehicleService.updateVehicle(id, request);
 
         return ResponseEntity.ok(new ResponseDto<>(200,"Vehicle Updated Successfully",response));
 
@@ -76,14 +68,11 @@ public class VehicleController {
     @PatchMapping("/status/{vehicleId}")
     @Operation(summary = "Update vehicle status ( FEATURED, ACTIVE, INACTIVE ) by dealer API")
     public ResponseEntity<ResponseDto<VehicleStatus>> updateVehicleStatus(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable("vehicleId") Long id,
-            @RequestBody VehicleStatusRequestDTO request) throws AccessDeniedException {
+            @RequestBody VehicleStatusRequestDTO request)  {
 
-        Long loggedInDealerId =
-                jwtUtil.extractId(authHeader.substring(7));
 
-        VehicleResponseDTO response = vehicleService.updateVehicleStatus(id,request,loggedInDealerId);
+        VehicleResponseDTO response = vehicleService.updateVehicleStatus(id,request);
 
         return ResponseEntity.ok(
                 new ResponseDto<>(
@@ -98,11 +87,9 @@ public class VehicleController {
 
     @DeleteMapping("/delete/{vehicleId}")
     @Operation(summary = "Delete vehicle by dealer API")
-    public ResponseEntity<ResponseDto> deleteVehicle(@PathVariable Long vehicleId,@RequestHeader("Authorization") String authHeader) throws AccessDeniedException {
-        Long loggedInDealerId =
-                jwtUtil.extractId(authHeader.substring(7));
+    public ResponseEntity<ResponseDto> deleteVehicle(@PathVariable Long vehicleId) {
 
-        vehicleService.deleteVehicle(vehicleId,loggedInDealerId);
+        vehicleService.deleteVehicle(vehicleId);
         return new ResponseEntity<>(new ResponseDto<>(201,"Vehicle Delete Successfully",null),HttpStatus.OK);
     }
 
@@ -112,10 +99,8 @@ public class VehicleController {
     @GetMapping("/dealer/{dealerId}")
     @Operation(summary = "Get all vehicle by dealer id API")
     public ResponseEntity<ResponseDto<List<VehicleResponseDTO>>> getAllVehicleByDealerId(
-            @PathVariable Long dealerId,
-            @RequestHeader("Authorization") String authHeader) throws AccessDeniedException {
+            @PathVariable Long dealerId) {
 
-        validateDealerAccess(authHeader, dealerId);
 
         List<VehicleResponseDTO> response =
                 vehicleService.getAllVehicleByDealerId(dealerId);
@@ -135,11 +120,9 @@ public class VehicleController {
     public ResponseEntity<ResponseDto<VehicleResponseDTO>> getVehicleById(@RequestHeader("Authorization") String authHeader,
             @PathVariable Long vehicleId) throws AccessDeniedException {
 
-        Long loggedInDealerId =
-                jwtUtil.extractId(authHeader.substring(7));
 
         VehicleResponseDTO response =
-                vehicleService.getVehicleById(vehicleId,loggedInDealerId);
+                vehicleService.getVehicleById(vehicleId);
 
         return ResponseEntity.ok(
                 new ResponseDto<>(
@@ -193,17 +176,6 @@ public class VehicleController {
         );
     }
 
-    private void validateDealerAccess(
-            String authHeader,
-            Long dealerId) throws AccessDeniedException {
 
-        Long loggedInDealerId =
-                jwtUtil.extractId(authHeader.substring(7));
-
-        if (!loggedInDealerId.equals(dealerId)) {
-            throw new AccessDeniedException(
-                    "You are not authorized to perform this action");
-        }
-    }
 
 }
