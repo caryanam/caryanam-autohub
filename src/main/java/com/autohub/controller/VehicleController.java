@@ -139,8 +139,7 @@ public class VehicleController {
 
     @GetMapping("/{vehicleId}")
     @Operation(summary = "Get vehicle by vehicle id API")
-    public ResponseEntity<ResponseDto<VehicleResponseDTO>> getVehicleById(@RequestHeader("Authorization") String authHeader,
-            @PathVariable Long vehicleId) throws AccessDeniedException {
+    public ResponseEntity<ResponseDto<VehicleResponseDTO>> getVehicleById(@PathVariable Long vehicleId) {
 
 
         VehicleResponseDTO response =
@@ -157,8 +156,7 @@ public class VehicleController {
     // ================= GET ALL ACTIVE AND FEATURES AND NON-PREMIUM VEHICLE =================
     @GetMapping("/non-premium/all-vehicle")
     public ResponseEntity<ResponseDto<List<VehicleResponseDTO>>> getAllNonPremiumVehicle(
-            @RequestParam(required = false) Long customerId
-    ) {
+            @RequestParam(required = false) Long customerId ) {
 
         return ResponseEntity.ok(
                 new ResponseDto<>(

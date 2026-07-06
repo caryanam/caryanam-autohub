@@ -71,8 +71,6 @@ public class SecurityConfig {
                                         "/v3/api-docs/**"
                                 ).permitAll()
 
-                                .requestMatchers(HttpMethod.GET, "/api/vehicle/*").permitAll()
-
                                 .requestMatchers(
                                         "/uploads/**","/api/olx/**")
                                 .permitAll()
