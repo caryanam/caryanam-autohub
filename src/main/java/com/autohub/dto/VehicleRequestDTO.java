@@ -1,6 +1,5 @@
 package com.autohub.dto;
 
-import com.autohub.enums.InsuranceStatus;
 import com.autohub.enums.VehicleType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -9,15 +8,15 @@ import lombok.Data;
 public class VehicleRequestDTO {
 
     @NotBlank(message = "Brand Name is Required")
-    @Size(min = 5, max = 100,message = "Brand Name must be between 10 and 1000 characters")
+    @Size(min = 2, max = 100,message = "Brand Name must be between 10 and 1000 characters")
     private String brand;
 
     @NotBlank(message = "Model Name is Required")
-    @Size(min = 5, max = 100,message = "Model Name must be between 10 and 1000 characters")
+    @Size(min = 2, max = 100,message = "Model Name must be between 10 and 1000 characters")
     private String model;
 
     @NotBlank(message = "Variant Name is Required")
-    @Size(min = 5, max = 100,message = "Variant Name must be between 10 and 1000 characters")
+    @Size(min = 2, max = 100,message = "Variant Name must be between 10 and 1000 characters")
     private String variant;
 
     @NotNull(message = "Registration Year is Required")
@@ -43,19 +42,10 @@ public class VehicleRequestDTO {
     )
     private String fuelType;
 
-//    @NotBlank(message = "Transmission is Required")
-//    @Pattern(
-//            regexp = "^(MANUAL|AUTOMATIC|CVT|AMT)$",
-//            message = "Invalid Transmission Type"
-//    )
-//    private String transmission;
-
     @NotNull(message = "Kilometer Driven is Required")
     @Positive(message = "Kilometer Driven must be greater than 0")
     private int ownershipDetails;
 
-//    @NotBlank(message = "Insurance Status is Required")
-//    private InsuranceStatus insuranceStatus;
 
     @NotBlank(message = "City is Required")
     @Size(min = 2, max = 50,
@@ -65,13 +55,6 @@ public class VehicleRequestDTO {
             message = "City can contain only letters and spaces"
     )
     private String city;
-
-//    @NotBlank(message = "RTO Information is Required")
-//    @Pattern(
-//            regexp = "^[A-Z]{2}[0-9]{1,2}$",
-//            message = "Invalid RTO Code. Example: MH31, DL1"
-//    )
-//    private String rtoInformation;
 
     @NotNull(message = "Finance Availability is Required")
     private Boolean financeAvailability;

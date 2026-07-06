@@ -62,6 +62,14 @@ public class DealerServiceImpl implements DealerService {
             throw new RuntimeException("Email already registered");
         }
 
+        if (dto.getExecutiveMobile() != null
+                && !dto.getExecutiveMobile().isBlank()
+                && dto.getDealerMobile().equals(dto.getExecutiveMobile())) {
+
+            throw new RuntimeException(
+                    "Dealer mobile number and Executive mobile number cannot be the same");
+        }
+
         if (dealerRepository.existsByDealerMobile(dto.getDealerMobile())) {
             throw new RuntimeException("Mobile already registered");
         }
@@ -141,6 +149,7 @@ public class DealerServiceImpl implements DealerService {
 
         return modelMapper.map(savedDealer, DealerResponseDTO.class);
     }
+
 //    @Override
 //    public DealerResponseDTO registerDealer(DealerRegisterDTO dto, MultipartFile dealerLogo, MultipartFile showroomImage) {
 //
@@ -305,9 +314,9 @@ public class DealerServiceImpl implements DealerService {
                 .ownerName(dealer.getOwnerName())
                 .gstNumber(dealer.getGstNumber())
                 .yearsInBusiness(dealer.getYearsInBusiness())
-                //.dealerMobile(dealer.getDealerMobile())
-               //.executiveMobile(dealer.getExecutiveMobile())
-                //.whatsapp(dealer.getWhatsapp())
+                .dealerMobile(dealer.getDealerMobile())
+               .executiveMobile(dealer.getExecutiveMobile())
+                .whatsapp(dealer.getWhatsapp())
                 .email(dealer.getEmail())
                 .address(dealer.getAddress())
                 .city(dealer.getCity())
@@ -337,7 +346,6 @@ public class DealerServiceImpl implements DealerService {
 
         Dealer dealer = dealerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
         dealer.setBusinessName(dto.getBusinessName());
-        dealer.setOwnerName(dto.getOwnerName());
         dealer.setWhatsapp(dto.getWhatsapp());
         dealer.setExecutiveMobile(dto.getExecutiveMobile());
         dealer.setAddress(dto.getAddress());
@@ -436,25 +444,28 @@ public class DealerServiceImpl implements DealerService {
                 .toList();
     }
 
+
     @Override
     public DealerCurrentSubscriptionPlanDTO getDealerCurrentSubscriptionPlan(Long dealerId) {
+
         Dealer dealer = dealerRepository.findById(dealerId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Dealer Not Found"));
 
+        Optional<Payment> paymentOpt =
+                paymentRepository.findTopByDealerIdOrderByPaymentIdDesc(dealerId);
 
-        Payment payment = paymentRepository.findTopByDealerIdOrderByPaymentIdDesc(dealerId)
-                .orElseThrow(() ->
-                        new RuntimeException("You don't have any subscription plan."));
+        SubscriptionPlan plan;
 
-        if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
+        if (paymentOpt.isPresent()
+                && paymentOpt.get().getPaymentStatus() == PaymentStatus.SUCCESS) {
 
-            throw new RuntimeException(
-                    "Your subscription plan is waiting for admin approval.");
+            plan = paymentOpt.get().getSubscriptionPlan();
+
+        } else {
+
+            plan = dealer.getSubscriptionPlan();
         }
-
-        SubscriptionPlan plan = payment.getSubscriptionPlan();
-
 
         Long remainingDays = 0L;
 
@@ -462,8 +473,7 @@ public class DealerServiceImpl implements DealerService {
 
             remainingDays = ChronoUnit.DAYS.between(
                     LocalDate.now(),
-                    dealer.getSubscriptionEndDate().toLocalDate()
-            );
+                    dealer.getSubscriptionEndDate().toLocalDate());
 
             if (remainingDays < 0) {
                 remainingDays = 0L;
@@ -481,5 +491,51 @@ public class DealerServiceImpl implements DealerService {
                 remainingDays
         );
     }
+//
+//    @Override
+//    public DealerCurrentSubscriptionPlanDTO getDealerCurrentSubscriptionPlan(Long dealerId) {
+//        Dealer dealer = dealerRepository.findById(dealerId)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException("Dealer Not Found"));
+//
+//
+//        Payment payment = paymentRepository.findTopByDealerIdOrderByPaymentIdDesc(dealerId)
+//                .orElseThrow(() ->
+//                        new RuntimeException("You don't have any subscription plan."));
+//
+//        if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
+//
+//            throw new RuntimeException(
+//                    "Your subscription plan is waiting for admin approval.");
+//        }
+//
+//        SubscriptionPlan plan = payment.getSubscriptionPlan();
+//
+//
+//        Long remainingDays = 0L;
+//
+//        if (dealer.getSubscriptionEndDate() != null) {
+//
+//            remainingDays = ChronoUnit.DAYS.between(
+//                    LocalDate.now(),
+//                    dealer.getSubscriptionEndDate().toLocalDate()
+//            );
+//
+//            if (remainingDays < 0) {
+//                remainingDays = 0L;
+//            }
+//        }
+//
+//        return new DealerCurrentSubscriptionPlanDTO(
+//                dealer.getId(),
+//                plan.name(),
+//                plan.getAmount(),
+//                plan.getVehicleLimit(),
+//                plan.getValidityMonths(),
+//                dealer.getSubscriptionStartDate(),
+//                dealer.getSubscriptionEndDate(),
+//                remainingDays
+//        );
+//    }
 
 }

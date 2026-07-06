@@ -20,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Set;
 
@@ -77,7 +76,7 @@ public class VehicleController {
     @PutMapping("/update/{vehicleId}")
     @Operation(summary = "Update vehicle info by dealer API")
     public ResponseEntity<ResponseDto<VehicleResponseDTO>> updateVehicle(@PathVariable("vehicleId") Long id,
-                                                                         @RequestBody VehicleRequestDTO request) {
+                                                                         @Valid  @RequestBody VehicleRequestDTO request) {
 
         VehicleResponseDTO response = vehicleService.updateVehicle(id, request);
 

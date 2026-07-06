@@ -10,7 +10,7 @@ import lombok.Data;
 public class CustomerRegistrationRequestDTO {
 
     @NotBlank(message = "Customer Name is Required")
-    @Size(min = 3, max = 100,message = "Business Name must be between 3 and 100 characters")
+    @Size(min = 3, max = 100,message = "Customer Name must be between 3 and 100 characters")
     private String customerName;
 
     @NotBlank(message = "Customer Mobile Number is Required")
@@ -21,11 +21,24 @@ public class CustomerRegistrationRequestDTO {
     private String mobile;
 
     @NotBlank(message = "Customer City is Required")
-    @Size(min = 2, max = 50,
-            message = "City must be between 2 and 50 characters")
+    @Size(
+            min = 3,
+            max = 50,
+            message = "City name must be between 3 and 50 characters"
+    )
+    @Pattern(
+            regexp = "^[A-Za-z ]+$",
+            message = "City name must contain only alphabets and spaces"
+    )
     private String customerCity;
 
+    @NotBlank(message = "Email is Required")
     @Email(message = "Invalid email format")
+    @Pattern(
+            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            message = "Please enter a valid email address"
+    )
+    @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
 
     @NotBlank(message = "Customer Password is Required")

@@ -389,13 +389,10 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setVariant(request.getVariant());
         vehicle.setRegistrationYear(request.getRegistrationYear());
         vehicle.setFuelType(request.getFuelType());
-       // vehicle.setTransmission(request.getTransmission());
         vehicle.setKilometerDriven(request.getKilometerDriven());
         vehicle.setCity(request.getCity());
         vehicle.setOwnershipDetails(request.getOwnershipDetails());
-       // vehicle.setInsuranceStatus(request.getInsuranceStatus());
         vehicle.setAskingPrice(request.getAskingPrice());
-       // vehicle.setRtoInformation(request.getRtoInformation());
         vehicle.setFinanceAvailability(request.getFinanceAvailability());
         vehicle.setVehicleType(request.getVehicleType());
         vehicle.setVehicleDescription(request.getVehicleDescription());
@@ -410,10 +407,8 @@ public class VehicleServiceImpl implements VehicleService {
                 .city(updatedVehicle.getCity())
                 .registrationYear(updatedVehicle.getRegistrationYear())
                 .fuelType(updatedVehicle.getFuelType())
-               // .transmission(updatedVehicle.getTransmission())
                 .kilometerDriven(updatedVehicle.getKilometerDriven())
                 .ownershipDetails(updatedVehicle.getOwnershipDetails())
-               // .insuranceStatus(String.valueOf(updatedVehicle.getInsuranceStatus()))
                 .askingPrice(BigDecimal.valueOf(updatedVehicle.getAskingPrice()))
                 .vehicleType(updatedVehicle.getVehicleType())
                 .vehicleDescription(updatedVehicle.getVehicleDescription())
@@ -483,9 +478,7 @@ public class VehicleServiceImpl implements VehicleService {
                         .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
                         .kilometerDriven(vehicle.getKilometerDriven())
                         .fuelType(vehicle.getFuelType())
-                    //    .transmission(vehicle.getTransmission())
                         .ownershipDetails(vehicle.getOwnershipDetails())
-                      //  .insuranceStatus(String.valueOf(vehicle.getInsuranceStatus()))
                         .vehicleDescription(vehicle.getVehicleDescription())
                         .city(vehicle.getCity())
                         .dealerContactName(vehicle.getDealer().getOwnerName())
@@ -496,7 +489,6 @@ public class VehicleServiceImpl implements VehicleService {
                         .dealerContactEmail(vehicle.getDealer().getEmail())
                         .vehicleStatus(vehicle.getVehicleStatus())
                         .vehicleType(vehicle.getVehicleType())
-                    //    .rtoInformation(vehicle.getRtoInformation())
                         .financeAvailability(vehicle.isFinanceAvailability())
                         .createdAt(vehicle.getCreatedAt())
                         .images(
@@ -545,9 +537,7 @@ public class VehicleServiceImpl implements VehicleService {
                 .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
                 .kilometerDriven(vehicle.getKilometerDriven())
                 .fuelType(vehicle.getFuelType())
-           //     .transmission(vehicle.getTransmission())
                 .ownershipDetails(vehicle.getOwnershipDetails())
-           //     .insuranceStatus(String.valueOf(vehicle.getInsuranceStatus()))
                 .vehicleDescription(vehicle.getVehicleDescription())
                 .city(vehicle.getCity())
                 .dealerContactName(vehicle.getDealer().getOwnerName())
@@ -558,7 +548,6 @@ public class VehicleServiceImpl implements VehicleService {
                 .dealerContactEmail(vehicle.getDealer().getEmail())
                 .dealerYearsInBusiness(vehicle.getDealer().getYearsInBusiness())
                 .vehicleStatus(vehicle.getVehicleStatus())
-           //     .rtoInformation(vehicle.getRtoInformation())
                 .financeAvailability(vehicle.isFinanceAvailability())
                 .vehicleType(vehicle.getVehicleType())
                 .createdAt(vehicle.getCreatedAt())

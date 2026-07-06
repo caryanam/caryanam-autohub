@@ -77,12 +77,12 @@ public class VehicleResponseDTO {
     private Long kilometerDriven;
 
     private String fuelType;
-
-    private String transmission;
+//
+//    private String transmission;
 
     private int ownershipDetails;
-
-    private String insuranceStatus;
+//
+//    private String insuranceStatus;
 
     private String city;
 
