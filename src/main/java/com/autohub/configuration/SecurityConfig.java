@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/auth/**"
                                         ,"/api/customer/**"
+                                        ,"/api/pincode/**"
                                         ,"/api/dealer/register/**"
                                         ,"/api/vehicle/dealer/**"
                                         ,"/api/vehicle/**"
