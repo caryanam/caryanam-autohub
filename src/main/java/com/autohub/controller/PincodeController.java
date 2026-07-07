@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/pincode")
 @RequiredArgsConstructor
@@ -53,5 +55,13 @@ public class PincodeController {
 
         return ResponseEntity.ok(
                 service.getByPincode(pincode));
+    }
+
+    @GetMapping("/all-areas")
+    public ResponseEntity<List<String>> getAllAreas() {
+
+        return ResponseEntity.ok(
+                service.getAllAreas()
+        );
     }
 }

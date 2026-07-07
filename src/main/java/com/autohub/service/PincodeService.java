@@ -16,4 +16,6 @@ public interface PincodeService {
     public List<AreaResponseDTO> getByArea(String area);
 
     public List<AreaResponseDTO> getByPincode(String pincode);
+
+    public List<String> getAllAreas();
 }

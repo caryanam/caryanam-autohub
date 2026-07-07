@@ -33,5 +33,14 @@ public interface PincodeMasterRepository
 
     List<PincodeMaster> findAllByPincode(String pincode);
 
+    @Query("""
+       SELECT DISTINCT p.area
+       FROM PincodeMaster p
+       WHERE p.area IS NOT NULL
+       AND p.area <> ''
+       ORDER BY p.area
+       """)
+    List<String> getAllAreas();
+
 
 }

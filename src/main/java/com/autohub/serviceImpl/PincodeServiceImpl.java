@@ -103,6 +103,11 @@ public class PincodeServiceImpl
                 .toList();
     }
 
+    @Override
+    public List<String> getAllAreas() {
+        return repository.getAllAreas();
+    }
+
 
     private AreaResponseDTO map(PincodeMaster p) {
 
@@ -113,6 +118,8 @@ public class PincodeServiceImpl
                 p.getNearBy()
         );
     }
+
+
 
 
     private String getCellValue(Cell cell) {
