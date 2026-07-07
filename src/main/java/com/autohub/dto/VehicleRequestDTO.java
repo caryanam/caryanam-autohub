@@ -65,10 +65,6 @@ public class VehicleRequestDTO {
             max = 5000,
             message = "Vehicle Description must be between 20 and 5000 characters"
     )
-    @Pattern(
-            regexp = ".*[A-Za-z0-9].*",
-            message = "Vehicle Description must contain meaningful text"
-    )
     private String vehicleDescription;
 
     @NotNull(message = "Vehicle Type is Required")
