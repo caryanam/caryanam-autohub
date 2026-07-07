@@ -164,20 +164,14 @@ public class VehicleServiceImpl implements VehicleService {
                 .model(vehicleRequestDTO.getModel())
                 .variant(vehicleRequestDTO.getVariant())
                 .registrationYear(vehicleRequestDTO.getRegistrationYear())
-                .fuelType(vehicleRequestDTO.getFuelType())
-                //.transmission(vehicleRequestDTO.getTransmission())
+                .fuelType(vehicleRequestDTO.getFuelType().trim().toUpperCase())
                 .kilometerDriven(vehicleRequestDTO.getKilometerDriven())
                 .ownershipDetails(vehicleRequestDTO.getOwnershipDetails())
-               // .insuranceStatus(InsuranceStatus.valueOf(String.valueOf(vehicleRequestDTO.getInsuranceStatus())))
                 .askingPrice(vehicleRequestDTO.getAskingPrice())
-                .vehicleDescription(vehicleRequestDTO.getVehicleDescription())
+                .vehicleDescription(vehicleRequestDTO.getVehicleDescription().trim().replaceAll("\\s+", " "))
                 .city(vehicleRequestDTO.getCity())
                 .dealerContactName(dealer.getOwnerName())
                 .dealerContactNumber(dealer.getDealerMobile())
-                //.dealerWhatsappNumber(dealer.getWhatsapp())
-                //.dealerBusinessName(dealer.getBusinessName())
-               // .dealerContactEmail(dealer.getEmail())
-               // .rtoInformation(vehicleRequestDTO.getRtoInformation())
                 .financeAvailability(vehicleRequestDTO.getFinanceAvailability())
                 .vehicleStatus(VehicleStatus.ACTIVE)
                 .vehicleType(vehicleRequestDTO.getVehicleType())
@@ -352,10 +346,8 @@ public class VehicleServiceImpl implements VehicleService {
                 .variant(savedVehicle.getVariant())
                 .registrationYear(savedVehicle.getRegistrationYear())
                 .fuelType(savedVehicle.getFuelType())
-               // .transmission(savedVehicle.getTransmission())
                 .kilometerDriven(savedVehicle.getKilometerDriven())
                 .ownershipDetails(savedVehicle.getOwnershipDetails())
-              //  .insuranceStatus(String.valueOf(savedVehicle.getInsuranceStatus()))
                 .askingPrice(BigDecimal.valueOf(savedVehicle.getAskingPrice()))
                 .vehicleDescription(savedVehicle.getVehicleDescription())
                 .city(savedVehicle.getCity())
@@ -388,14 +380,15 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setModel(request.getModel());
         vehicle.setVariant(request.getVariant());
         vehicle.setRegistrationYear(request.getRegistrationYear());
-        vehicle.setFuelType(request.getFuelType());
+        vehicle.setFuelType(request.getFuelType().trim().toUpperCase());
         vehicle.setKilometerDriven(request.getKilometerDriven());
         vehicle.setCity(request.getCity());
         vehicle.setOwnershipDetails(request.getOwnershipDetails());
         vehicle.setAskingPrice(request.getAskingPrice());
         vehicle.setFinanceAvailability(request.getFinanceAvailability());
         vehicle.setVehicleType(request.getVehicleType());
-        vehicle.setVehicleDescription(request.getVehicleDescription());
+        vehicle.setVehicleDescription(
+                request.getVehicleDescription().trim().replaceAll("\\s+", " "));
 
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
 
