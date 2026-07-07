@@ -460,6 +460,8 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ResourceNotFoundException("Dealer has no vehicles");
         }
 
+        System.out.println("Dealer id"+vehicles);
+
         return vehicles.stream()
                 .map(vehicle -> VehicleResponseDTO.builder()
                         .id(vehicle.getId())
@@ -529,7 +531,7 @@ public class VehicleServiceImpl implements VehicleService {
                 .registrationYear(vehicle.getRegistrationYear())
                 .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
                 .kilometerDriven(vehicle.getKilometerDriven())
-                .fuelType(vehicle.getFuelType())
+                .fuelType(vehicle.getFuelType().trim().toUpperCase())
                 .ownershipDetails(vehicle.getOwnershipDetails())
                 .vehicleDescription(vehicle.getVehicleDescription())
                 .city(vehicle.getCity())
