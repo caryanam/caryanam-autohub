@@ -51,8 +51,8 @@ public class VehicleRequestDTO {
     @Size(min = 2, max = 50,
             message = "City must be between 2 and 50 characters")
     @Pattern(
-            regexp = "^[A-Za-z ]+$",
-            message = "City can contain only letters and spaces"
+            regexp = "^[A-Za-z0-9 .()&,-]+$",
+            message = "Invalid City Name"
     )
     private String city;
 
