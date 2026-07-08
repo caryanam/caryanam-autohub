@@ -164,8 +164,11 @@ public class OlxImportServiceImpl implements OlxImportService {
                     car.setDealerContactName(getStringValue(formatter, row, 29));
                     car.setDealerContactNumber(getStringValue(formatter, row, 30));
 
+                    // TODO: replace 31 with the actual column index once confirmed
+                    car.setVehicleType(resolveVehicleType(getStringValue(formatter, row, 31)));
+
                     car.setFinanceAvailability(false);
-                    car.setVehicleType(VehicleType.NON_PREMIUM);
+                   // car.setVehicleType(VehicleType.NON_PREMIUM);
                     car.setVehicleStatus(VehicleStatus.ACTIVE);
                     car.setCreatedAt(LocalDateTime.now());
 
@@ -330,7 +333,31 @@ public class OlxImportServiceImpl implements OlxImportService {
 
         return fileName.trim();
     }
+    /**
+     * Converts a free-text cell value like "premium", "Non Premium", "NON-PREMIUM"
+     * into the VehicleType enum. Falls back to NON_PREMIUM (and logs a warning)
+     * for blank or unrecognized values, so one bad cell doesn't fail the row.
+     */
+    private VehicleType resolveVehicleType(String rawValue) {
 
+        if (rawValue == null || rawValue.isBlank()) {
+            return VehicleType.NON_PREMIUM;
+        }
+
+        String normalized = rawValue.trim()
+                .toUpperCase(Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_');
+
+        try {
+            return VehicleType.valueOf(normalized);
+        } catch (IllegalArgumentException ex) {
+            System.out.println(
+                    "WARNING: Unrecognized vehicle type '" + rawValue
+                            + "', defaulting to NON_PREMIUM");
+            return VehicleType.NON_PREMIUM;
+        }
+    }
 
 
 
