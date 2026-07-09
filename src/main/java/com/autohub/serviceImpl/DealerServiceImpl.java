@@ -228,7 +228,13 @@ public class DealerServiceImpl implements DealerService {
 //    }
 
 
-    private String saveFile(MultipartFile file,String dealerId,String prefix) {
+    // ============================================================
+// Replace the existing saveFile method with this one.
+// Add stripLeadingSlash as a new private helper alongside it.
+// Nothing else in DealerServiceImpl needs to change.
+// ============================================================
+
+    private String saveFile(MultipartFile file, String dealerId, String prefix) {
 
         try {
 
@@ -238,32 +244,93 @@ public class DealerServiceImpl implements DealerService {
                 directory.mkdirs();
             }
 
+            String originalName = file.getOriginalFilename();
+
             String extension =
-                    file.getOriginalFilename()
-                            .substring(
-                                    file.getOriginalFilename()
-                                            .lastIndexOf("."));
+                    (originalName != null && originalName.contains("."))
+                            ? originalName.substring(originalName.lastIndexOf("."))
+                            : "";
 
-            String fileName =
-                    dealerId +
-                            "_" +
-                            prefix +
-                            extension;
+            String fileName = dealerId + "_" + prefix + extension;
 
-            Path path =
-                    Paths.get(uploadDir, fileName);
+            Path diskPath = Paths.get(uploadDir, fileName);
 
             Files.copy(
                     file.getInputStream(),
-                    path,
+                    diskPath,
                     StandardCopyOption.REPLACE_EXISTING);
 
-            return path.toString();
+            // Build the PUBLIC (URL) path explicitly and independently of the
+            // OS path representation used for the disk write above. Always
+            // exactly one leading slash, always forward slashes - matches the
+            // "/uploads/**" resource handler mapping and the pattern already
+            // used in addVehicleWithData / the OLX import.
+            //
+            // Previously this returned path.toString() directly, which - once
+            // uploadDir became a relative path - had NO leading slash, so
+            // serverUrl + filePath produced a broken, unseparated URL like
+            // "https://c1.caryanam.comuploads/dealers/127_logo.png".
+            return "/" + stripLeadingSlash(uploadDir) + "/" + fileName;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload file");
         }
     }
+
+    /**
+     * Removes any leading slash(es) from a configured directory value, so it
+     * can be safely combined with exactly one "/" when building a public URL
+     * path - regardless of whether file.upload-dir was set with or without
+     * a leading slash.
+     */
+    private String stripLeadingSlash(String path) {
+        if (path == null) {
+            return "";
+        }
+        return path.replaceAll("^/+", "");
+    }
+
+
+
+
+
+
+//    private String saveFile(MultipartFile file,String dealerId,String prefix) {
+//
+//        try {
+//
+//            File directory = new File(uploadDir);
+//
+//            if (!directory.exists()) {
+//                directory.mkdirs();
+//            }
+//
+//            String extension =
+//                    file.getOriginalFilename()
+//                            .substring(
+//                                    file.getOriginalFilename()
+//                                            .lastIndexOf("."));
+//
+//            String fileName =
+//                    dealerId +
+//                            "_" +
+//                            prefix +
+//                            extension;
+//
+//            Path path =
+//                    Paths.get(uploadDir, fileName);
+//
+//            Files.copy(
+//                    file.getInputStream(),
+//                    path,
+//                    StandardCopyOption.REPLACE_EXISTING);
+//
+//            return path.toString();
+//
+//        } catch (Exception e) {
+//            throw new RuntimeException("Failed to upload file");
+//        }
+//    }
 
 
     @Override
