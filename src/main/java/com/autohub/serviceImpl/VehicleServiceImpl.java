@@ -44,6 +44,8 @@ public class VehicleServiceImpl implements VehicleService {
     @Value("${spring.server.url}")
     private String serverUrl;
 
+
+
     @Override
     public VehicleResponseDTO addVehicleWithData(VehicleRequestDTO vehicleRequestDTO, List<MultipartFile> images, List<MultipartFile> videos, Long dealerId) throws IOException {
 
@@ -57,7 +59,7 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
         // ===============================
-            // FREE TRIAL / SUBSCRIPTION CHECK
+        // FREE TRIAL / SUBSCRIPTION CHECK
         // ===============================
 
         boolean freeTrialActive =
@@ -213,6 +215,14 @@ public class VehicleServiceImpl implements VehicleService {
                             "Image size cannot exceed 10 MB");
                 }
 
+                // uploadDir now comes from file.upload-dir=uploads/dealers (no
+                // leading slash) so this resolves to a path RELATIVE to the
+                // app's working directory - the same base directory the
+                // static resource handler ("/uploads/**" -> uploads/)
+                // actually serves from. This is the fix: previously a leading
+                // slash on file.upload-dir made this an absolute filesystem
+                // path at the OS root, completely disconnected from where
+                // Spring was looking for static files.
                 String imageFolder =
                         uploadDir +
                                 "/dealer_" + dealerId +
@@ -225,10 +235,16 @@ public class VehicleServiceImpl implements VehicleService {
                     folder.mkdirs();
                 }
 
+                // Sanitize the original filename: strip spaces/special
+                // characters that can cause issues in URLs or on some
+                // filesystems, instead of relying on the browser to
+                // URL-encode them later.
+                String safeOriginalName = sanitizeFileName(file.getOriginalFilename());
+
                 String fileName =
                         System.currentTimeMillis()
                                 + "_"
-                                + file.getOriginalFilename();
+                                + safeOriginalName;
 
                 Path filePath =
                         Paths.get(imageFolder, fileName);
@@ -238,11 +254,22 @@ public class VehicleServiceImpl implements VehicleService {
                         filePath,
                         StandardCopyOption.REPLACE_EXISTING);
 
+                // Build the PUBLIC (URL) path explicitly and independently of
+                // the OS path representation used for the disk write above.
+                // Always exactly one leading slash, always forward slashes -
+                // this is what gets stored in the DB and later prefixed with
+                // serverUrl when building response DTOs.
+                String publicFilePath =
+                        "/" + stripLeadingSlash(uploadDir) +
+                                "/dealer_" + dealerId +
+                                "/vehicle_" + savedVehicle.getId() +
+                                "/images/" + fileName;
+
                 VehicleMedia media =
                         VehicleMedia.builder()
                                 .fileName(fileName)
                                 .fileType(file.getContentType())
-                                .filePath(filePath.toString())
+                                .filePath(publicFilePath)
                                 .mediaType("IMAGE")
                                 .vehicle(savedVehicle)
                                 .uploadedAt(LocalDateTime.now())
@@ -296,10 +323,12 @@ public class VehicleServiceImpl implements VehicleService {
                     folder.mkdirs();
                 }
 
+                String safeOriginalName = sanitizeFileName(file.getOriginalFilename());
+
                 String fileName =
                         System.currentTimeMillis()
                                 + "_"
-                                + file.getOriginalFilename();
+                                + safeOriginalName;
 
                 Path filePath =
                         Paths.get(videoFolder, fileName);
@@ -309,11 +338,17 @@ public class VehicleServiceImpl implements VehicleService {
                         filePath,
                         StandardCopyOption.REPLACE_EXISTING);
 
+                String publicFilePath =
+                        "/" + stripLeadingSlash(uploadDir) +
+                                "/dealer_" + dealerId +
+                                "/vehicle_" + savedVehicle.getId() +
+                                "/videos/" + fileName;
+
                 VehicleMedia media =
                         VehicleMedia.builder()
                                 .fileName(fileName)
                                 .fileType(file.getContentType())
-                                .filePath(filePath.toString())
+                                .filePath(publicFilePath)
                                 .mediaType("VIDEO")
                                 .uploadedAt(LocalDateTime.now())
                                 .vehicle(savedVehicle)
@@ -360,13 +395,378 @@ public class VehicleServiceImpl implements VehicleService {
                 .vehicleStatus(savedVehicle.getVehicleStatus())
                 .vehicleType(savedVehicle.getVehicleType())
                 .createdAt(savedVehicle.getCreatedAt())
-               // .rtoInformation(savedVehicle.getRtoInformation())
+                // .rtoInformation(savedVehicle.getRtoInformation())
                 .financeAvailability(savedVehicle.isFinanceAvailability())
                 .images(image)
                 .videos(video)
                 .build();
 
     }
+
+// ============================================================
+// Add these two private helper methods anywhere in the class
+// (e.g. near the bottom, alongside other private helpers).
+// ============================================================
+
+    /**
+     * Removes any leading slash(es) from a configured directory value, so it
+     * can be safely combined with exactly one "/" when building a public URL
+     * path - regardless of whether file.upload-dir was set with or without
+     * a leading slash.
+     */
+    private String stripLeadingSlash(String path) {
+        if (path == null) {
+            return "";
+        }
+        return path.replaceAll("^/+", "");
+    }
+
+    /**
+     * Replaces spaces and characters that are awkward in URLs/filesystems
+     * with underscores, so stored filenames are predictable and don't rely
+     * on the client correctly URL-encoding things like spaces later.
+     */
+    private String sanitizeFileName(String originalFileName) {
+        if (originalFileName == null || originalFileName.isBlank()) {
+            return "file";
+        }
+        return originalFileName
+                .trim()
+                .replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+
+
+
+
+
+
+
+
+
+//    @Override
+//    public VehicleResponseDTO addVehicleWithData(VehicleRequestDTO vehicleRequestDTO, List<MultipartFile> images, List<MultipartFile> videos, Long dealerId) throws IOException {
+//
+//        Dealer dealer = dealerRepository.findById(dealerId)
+//                .orElseThrow(() ->
+//                        new RuntimeException("Dealer not found"));
+//
+//        // Dealer account status Check
+//        if (dealer.getDealerAccountStatus() != DealerStatus.APPROVED) {
+//            throw new RuntimeException("Your account is pending for admin approval. You cannot add vehicles until approval.");
+//        }
+//
+//        // ===============================
+//            // FREE TRIAL / SUBSCRIPTION CHECK
+//        // ===============================
+//
+//        boolean freeTrialActive =
+//                dealer.getFreeTrialEndDate() != null
+//                        && LocalDateTime.now()
+//                        .isBefore(dealer.getFreeTrialEndDate());
+//
+//        if (!freeTrialActive) {
+//
+//            Payment payment = paymentRepository
+//                    .findTopByDealerIdOrderByPaymentIdDesc(dealerId)
+//                    .orElseThrow(() ->
+//                            new RuntimeException(
+//                                    "Your free trial has expired. Please purchase a subscription plan."));
+//
+//            if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
+//
+//                throw new RuntimeException(
+//                        "Your subscription plan is waiting for admin approval.");
+//            }
+//
+//            if (dealer.getSubscriptionEndDate() != null
+//                    && dealer.getSubscriptionEndDate()
+//                    .isBefore(LocalDateTime.now())) {
+//
+//                throw new RuntimeException(
+//                        "Subscription expired. Please renew subscription.");
+//            }
+//        }
+//
+//        if (!freeTrialActive && dealer.getSubscriptionPlan() == null) {
+//            throw new RuntimeException(
+//                    "Subscription plan not assigned. Please contact admin.");
+//        }
+//
+//
+//        // Vehicle Limit Check
+//        Long vehicleCount = vehicleRepository.countByDealer_Id(dealerId);
+//
+//        if (freeTrialActive) {
+//
+//            // Free Trial = BASIC Plan Limit
+//            int vehicleLimit = SubscriptionPlan.BASIC.getVehicleLimit();
+//
+//            if (vehicleCount >= vehicleLimit) {
+//
+//                throw new RuntimeException(
+//                        "Free trial allows only "
+//                                + vehicleLimit
+//                                + " vehicles.");
+//            }
+//
+//        } else {
+//
+//            if (dealer.getSubscriptionPlan() != null
+//                    && dealer.getSubscriptionPlan() != SubscriptionPlan.PREMIUM) {
+//
+//                int vehicleLimit =
+//                        dealer.getSubscriptionPlan().getVehicleLimit();
+//
+//                if (vehicleCount >= vehicleLimit) {
+//
+//                    throw new RuntimeException(
+//                            "Vehicle limit exceeded. Your "
+//                                    + dealer.getSubscriptionPlan()
+//                                    + " plan allows only "
+//                                    + vehicleLimit
+//                                    + " vehicles.");
+//                }
+//            }
+//        }
+//
+//
+//        //Upload Image Validation Minimum 10 image required to add vehicle
+//        if (images == null || images.size() < 10) {
+//            throw new RuntimeException(
+//                    "Minimum 10 images are required");
+//        }
+//
+//        //Upload Video Validation required to add vehicle
+//        if (videos == null || videos.isEmpty()) {
+//            throw new RuntimeException(
+//                    "Minimum 1 video is required");
+//        }
+//
+//        for (MultipartFile image : images) {
+//
+//            String contentType = image.getContentType();
+//
+//            if (contentType == null ||
+//                    !(contentType.equalsIgnoreCase("image/jpeg")
+//                            || contentType.equalsIgnoreCase("image/jpg")
+//                            || contentType.equalsIgnoreCase("image/png"))) {
+//
+//                throw new RuntimeException(
+//                        "Only JPG, JPEG and PNG images are allowed");
+//            }
+//        }
+//
+//        // Save Vehicle
+//        Vehicle vehicle = Vehicle.builder()
+//                .dealer(dealer)
+//                .brand(vehicleRequestDTO.getBrand())
+//                .model(vehicleRequestDTO.getModel())
+//                .variant(vehicleRequestDTO.getVariant())
+//                .registrationYear(vehicleRequestDTO.getRegistrationYear())
+//                .fuelType(vehicleRequestDTO.getFuelType().trim().toUpperCase())
+//                .kilometerDriven(vehicleRequestDTO.getKilometerDriven())
+//                .ownershipDetails(vehicleRequestDTO.getOwnershipDetails())
+//                .askingPrice(vehicleRequestDTO.getAskingPrice())
+//                .vehicleDescription(vehicleRequestDTO.getVehicleDescription().trim().replaceAll("\\s+", " "))
+//                .city(vehicleRequestDTO.getCity())
+//                .dealerContactName(dealer.getOwnerName())
+//                .dealerContactNumber(dealer.getDealerMobile())
+//                .financeAvailability(vehicleRequestDTO.getFinanceAvailability())
+//                .vehicleStatus(VehicleStatus.ACTIVE)
+//                .vehicleType(vehicleRequestDTO.getVehicleType())
+//
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//
+//        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+//
+//        // IMAGE UPLOAD
+//
+//        if (images != null && !images.isEmpty()) {
+//
+//            long maxImageSize = 10 * 1024 * 1024; // 10 MB
+//
+//            for (MultipartFile file : images) {
+//
+//                String contentType = file.getContentType();
+//
+//                // Image Type Validation
+//                if (contentType == null ||
+//                        !(contentType.equalsIgnoreCase("image/jpeg")
+//                                || contentType.equalsIgnoreCase("image/jpg")
+//                                || contentType.equalsIgnoreCase("image/png"))) {
+//
+//                    throw new RuntimeException(
+//                            "Only JPG, JPEG and PNG images are allowed");
+//                }
+//
+//                // Empty File Validation
+//                if (file.isEmpty()) {
+//                    throw new RuntimeException(
+//                            "Image file cannot be empty");
+//                }
+//
+//                // File Size Validation
+//                if (file.getSize() > maxImageSize) {
+//                    throw new RuntimeException(
+//                            "Image size cannot exceed 10 MB");
+//                }
+//
+//                String imageFolder =
+//                        uploadDir +
+//                                "/dealer_" + dealerId +
+//                                "/vehicle_" + savedVehicle.getId() +
+//                                "/images";
+//
+//                File folder = new File(imageFolder);
+//
+//                if (!folder.exists()) {
+//                    folder.mkdirs();
+//                }
+//
+//                String fileName =
+//                        System.currentTimeMillis()
+//                                + "_"
+//                                + file.getOriginalFilename();
+//
+//                Path filePath =
+//                        Paths.get(imageFolder, fileName);
+//
+//                Files.copy(
+//                        file.getInputStream(),
+//                        filePath,
+//                        StandardCopyOption.REPLACE_EXISTING);
+//
+//                VehicleMedia media =
+//                        VehicleMedia.builder()
+//                                .fileName(fileName)
+//                                .fileType(file.getContentType())
+//                                .filePath(filePath.toString())
+//                                .mediaType("IMAGE")
+//                                .vehicle(savedVehicle)
+//                                .uploadedAt(LocalDateTime.now())
+//                                .build();
+//
+//                mediaRepository.save(media);
+//            }
+//        }
+//
+//        // VIDEO UPLOAD
+//
+//        if (videos != null && !videos.isEmpty()) {
+//
+//            long maxVideoSize = 10 * 1024 * 1024; // 10 MB
+//
+//            for (MultipartFile file : videos) {
+//
+//                String contentType = file.getContentType();
+//
+//                // Video Type Validation
+//                if (contentType == null ||
+//                        !(contentType.equalsIgnoreCase("video/mp4")
+//                                || contentType.equalsIgnoreCase("video/quicktime")
+//                                || contentType.equalsIgnoreCase("video/x-msvideo"))) {
+//
+//                    throw new RuntimeException(
+//                            "Minimum 1 video allowed with size under 10 mb Only MP4, MOV and AVI videos are allowed");
+//                }
+//
+//                // Empty File Validation
+//                if (file.isEmpty()) {
+//                    throw new RuntimeException(
+//                            "Video file cannot be empty");
+//                }
+//
+//                // File Size Validation
+//                if (file.getSize() > maxVideoSize) {
+//                    throw new RuntimeException(
+//                            "Video size cannot exceed 100 MB");
+//                }
+//
+//                String videoFolder =
+//                        uploadDir +
+//                                "/dealer_" + dealerId +
+//                                "/vehicle_" + savedVehicle.getId() +
+//                                "/videos";
+//
+//                File folder = new File(videoFolder);
+//
+//                if (!folder.exists()) {
+//                    folder.mkdirs();
+//                }
+//
+//                String fileName =
+//                        System.currentTimeMillis()
+//                                + "_"
+//                                + file.getOriginalFilename();
+//
+//                Path filePath =
+//                        Paths.get(videoFolder, fileName);
+//
+//                Files.copy(
+//                        file.getInputStream(),
+//                        filePath,
+//                        StandardCopyOption.REPLACE_EXISTING);
+//
+//                VehicleMedia media =
+//                        VehicleMedia.builder()
+//                                .fileName(fileName)
+//                                .fileType(file.getContentType())
+//                                .filePath(filePath.toString())
+//                                .mediaType("VIDEO")
+//                                .uploadedAt(LocalDateTime.now())
+//                                .vehicle(savedVehicle)
+//                                .build();
+//
+//                mediaRepository.save(media);
+//            }
+//        }
+//
+//        List<VehicleMedia> mediaList =
+//                mediaRepository.findByVehicleId(savedVehicle.getId());
+//
+//        List<String> image = mediaList.stream()
+//                .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
+//                .map(media -> serverUrl+ media.getFilePath().replace("\\", "/"))
+//                .toList();
+//
+//        List<String> video = mediaList.stream()
+//                .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
+//                .map(media -> serverUrl+ media.getFilePath().replace("\\", "/"))
+//                .toList();
+//
+//        System.out.println("Media Count = " + mediaList.size());
+//
+//        return VehicleResponseDTO.builder()
+//                .id(savedVehicle.getId())
+//                .dealerId(savedVehicle.getDealer().getId())
+//                .brand(savedVehicle.getBrand())
+//                .model(savedVehicle.getModel())
+//                .variant(savedVehicle.getVariant())
+//                .registrationYear(savedVehicle.getRegistrationYear())
+//                .fuelType(savedVehicle.getFuelType())
+//                .kilometerDriven(savedVehicle.getKilometerDriven())
+//                .ownershipDetails(savedVehicle.getOwnershipDetails())
+//                .askingPrice(BigDecimal.valueOf(savedVehicle.getAskingPrice()))
+//                .vehicleDescription(savedVehicle.getVehicleDescription())
+//                .city(savedVehicle.getCity())
+//                .dealerContactName(vehicle.getDealer().getOwnerName())
+//                .dealerContactNumber(vehicle.getDealer().getDealerMobile())
+//                .executiveMobile(vehicle.getDealer().getExecutiveMobile())
+//                .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
+//                .dealerBusinessName(vehicle.getDealer().getBusinessName())
+//                .dealerContactEmail(vehicle.getDealer().getEmail())
+//                .vehicleStatus(savedVehicle.getVehicleStatus())
+//                .vehicleType(savedVehicle.getVehicleType())
+//                .createdAt(savedVehicle.getCreatedAt())
+//               // .rtoInformation(savedVehicle.getRtoInformation())
+//                .financeAvailability(savedVehicle.isFinanceAvailability())
+//                .images(image)
+//                .videos(video)
+//                .build();
+//
+//    }
 
 
     @Override
@@ -589,6 +989,7 @@ public class VehicleServiceImpl implements VehicleService {
         List<Vehicle> vehicles =
                 vehicleRepository.findAllActiveAndFeaturedVehicles(
                         VehicleType.NON_PREMIUM);
+
 
         if (vehicles.isEmpty()) {
             throw new ResourceNotFoundException("No vehicles found");
