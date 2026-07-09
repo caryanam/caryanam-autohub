@@ -369,44 +369,93 @@ public class DealerServiceImpl implements DealerService {
         return dto;
     }
 
-
     @Override
     public DealerResponseDTO getDealerProfile(Long dealerId) {
         Dealer dealer = dealerRepository.findById(dealerId).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
 
 
-       return DealerResponseDTO.builder()
+        return DealerResponseDTO.builder()
                 .id(dealer.getId())
                 .businessName(dealer.getBusinessName())
                 .ownerName(dealer.getOwnerName())
                 .gstNumber(dealer.getGstNumber())
                 .yearsInBusiness(dealer.getYearsInBusiness())
                 .dealerMobile(dealer.getDealerMobile())
-               .executiveMobile(dealer.getExecutiveMobile())
+                .executiveMobile(dealer.getExecutiveMobile())
                 .whatsapp(dealer.getWhatsapp())
                 .email(dealer.getEmail())
                 .address(dealer.getAddress())
                 .city(dealer.getCity())
                 .state(dealer.getState())
-                .pinCode(dealer.getPinCode()).dealerLogo(
-                       dealer.getDealerLogo() != null
-                               ? serverUrl+
-                               dealer.getDealerLogo().replace("\\", "/")
-                               : null
-               )
-
-               .showroomImage(
-                       dealer.getShowroomImage() != null
-                               ? serverUrl+
-                               dealer.getShowroomImage().replace("\\", "/")
-                               : null
-               )
-
-               .dealerAccountStatus(dealer.getDealerAccountStatus())
+                .pinCode(dealer.getPinCode())
+                .dealerLogo(buildMediaUrl(dealer.getDealerLogo()))
+                .showroomImage(buildMediaUrl(dealer.getShowroomImage()))
+                .dealerAccountStatus(dealer.getDealerAccountStatus())
                 .createdAt(dealer.getCreatedAt())
                 .build();
 
     }
+
+    /**
+     * Builds a full media URL from a stored path, normalizing it first so a
+     * missing leading slash (e.g. from data saved before saveFile() was
+     * fixed) can never again produce a broken concatenated URL like
+     * "https://c1.caryanam.comuploads/dealers/127_logo.jpg".
+     */
+    private String buildMediaUrl(String storedPath) {
+
+        if (storedPath == null || storedPath.isBlank()) {
+            return null;
+        }
+
+        String normalized = storedPath.replace("\\", "/").trim();
+
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+
+        return serverUrl + normalized;
+    }
+
+
+
+//    @Override
+//    public DealerResponseDTO getDealerProfile(Long dealerId) {
+//        Dealer dealer = dealerRepository.findById(dealerId).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
+//
+//
+//       return DealerResponseDTO.builder()
+//                .id(dealer.getId())
+//                .businessName(dealer.getBusinessName())
+//                .ownerName(dealer.getOwnerName())
+//                .gstNumber(dealer.getGstNumber())
+//                .yearsInBusiness(dealer.getYearsInBusiness())
+//                .dealerMobile(dealer.getDealerMobile())
+//               .executiveMobile(dealer.getExecutiveMobile())
+//                .whatsapp(dealer.getWhatsapp())
+//                .email(dealer.getEmail())
+//                .address(dealer.getAddress())
+//                .city(dealer.getCity())
+//                .state(dealer.getState())
+//                .pinCode(dealer.getPinCode()).dealerLogo(
+//                       dealer.getDealerLogo() != null
+//                               ? serverUrl+
+//                               dealer.getDealerLogo().replace("\\", "/")
+//                               : null
+//               )
+//
+//               .showroomImage(
+//                       dealer.getShowroomImage() != null
+//                               ? serverUrl+
+//                               dealer.getShowroomImage().replace("\\", "/")
+//                               : null
+//               )
+//
+//               .dealerAccountStatus(dealer.getDealerAccountStatus())
+//                .createdAt(dealer.getCreatedAt())
+//                .build();
+//
+//    }
 
     @Override
     public DealerProfileResponseDTO updateDealerProfile(Long id, UpdateDealerProfileRequestDTO dto) {

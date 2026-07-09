@@ -912,6 +912,8 @@ public class VehicleServiceImpl implements VehicleService {
                 .toList();
     }
 
+
+
     @Override
     public VehicleResponseDTO getVehicleById(Long vehicleId) {
 
@@ -946,27 +948,14 @@ public class VehicleServiceImpl implements VehicleService {
                 .financeAvailability(vehicle.isFinanceAvailability())
                 .vehicleType(vehicle.getVehicleType())
                 .createdAt(vehicle.getCreatedAt())
-                .dealerLogo(
-                        vehicle.getDealer().getDealerLogo() == null
-                                ? null
-                                : serverUrl+
-                                vehicle.getDealer().getDealerLogo().replace("\\", "/")
-                )
-
-                .dealerShowroomImage(
-                        vehicle.getDealer().getShowroomImage() == null
-                                ? null
-                                : serverUrl +
-                                vehicle.getDealer().getShowroomImage().replace("\\", "/")
-                )
+                .dealerLogo(buildMediaUrl(vehicle.getDealer().getDealerLogo()))
+                .dealerShowroomImage(buildMediaUrl(vehicle.getDealer().getShowroomImage()))
                 .images(
                         vehicle.getMediaList() == null
                                 ? List.of()
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                //.map(VehicleMedia::getFilePath)
-                                .map(media -> serverUrl+
-                                        media.getFilePath().replace("\\", "/"))
+                                .map(media -> buildMediaUrl(media.getFilePath()))
                                 .toList()
                 )
 
@@ -975,13 +964,105 @@ public class VehicleServiceImpl implements VehicleService {
                                 ? List.of()
                                 : vehicle.getMediaList().stream()
                                 .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                //.map(VehicleMedia::getFilePath)
-                                .map(media -> serverUrl+
-                                        media.getFilePath().replace("\\", "/"))
+                                .map(media -> buildMediaUrl(media.getFilePath()))
                                 .toList()
                 )
                 .build();
     }
+
+    /**
+     * Builds a full media URL from a stored path, normalizing it first so a
+     * missing leading slash (e.g. from data saved before the upload-path fix)
+     * can never again produce a broken concatenated URL like
+     * "https://c1.caryanam.comuploads/dealers/127_logo.jpg".
+     * Add this once in VehicleServiceImpl if it isn't there yet.
+     */
+    private String buildMediaUrl(String storedPath) {
+
+        if (storedPath == null || storedPath.isBlank()) {
+            return null;
+        }
+
+        String normalized = storedPath.replace("\\", "/").trim();
+
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+
+        return serverUrl + normalized;
+    }
+
+
+//    @Override
+//    public VehicleResponseDTO getVehicleById(Long vehicleId) {
+//
+//        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException(
+//                                "Vehicle not found with id : " + vehicleId));
+//
+//
+//
+//        return VehicleResponseDTO.builder()
+//                .id(vehicle.getId())
+//                .dealerId(vehicle.getDealer().getId())
+//                .brand(vehicle.getBrand())
+//                .model(vehicle.getModel())
+//                .variant(vehicle.getVariant())
+//                .registrationYear(vehicle.getRegistrationYear())
+//                .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
+//                .kilometerDriven(vehicle.getKilometerDriven())
+//                .fuelType(vehicle.getFuelType().trim().toUpperCase())
+//                .ownershipDetails(vehicle.getOwnershipDetails())
+//                .vehicleDescription(vehicle.getVehicleDescription())
+//                .city(vehicle.getCity())
+//                .dealerContactName(vehicle.getDealer().getOwnerName())
+//                .dealerContactNumber(vehicle.getDealer().getDealerMobile())
+//                .executiveMobile(vehicle.getDealer().getExecutiveMobile())
+//                .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
+//                .dealerBusinessName(vehicle.getDealer().getBusinessName())
+//                .dealerContactEmail(vehicle.getDealer().getEmail())
+//                .dealerYearsInBusiness(vehicle.getDealer().getYearsInBusiness())
+//                .vehicleStatus(vehicle.getVehicleStatus())
+//                .financeAvailability(vehicle.isFinanceAvailability())
+//                .vehicleType(vehicle.getVehicleType())
+//                .createdAt(vehicle.getCreatedAt())
+//                .dealerLogo(
+//                        vehicle.getDealer().getDealerLogo() == null
+//                                ? null
+//                                : serverUrl+
+//                                vehicle.getDealer().getDealerLogo().replace("\\", "/")
+//                )
+//
+//                .dealerShowroomImage(
+//                        vehicle.getDealer().getShowroomImage() == null
+//                                ? null
+//                                : serverUrl +
+//                                vehicle.getDealer().getShowroomImage().replace("\\", "/")
+//                )
+//                .images(
+//                        vehicle.getMediaList() == null
+//                                ? List.of()
+//                                : vehicle.getMediaList().stream()
+//                                .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
+//                                //.map(VehicleMedia::getFilePath)
+//                                .map(media -> serverUrl+
+//                                        media.getFilePath().replace("\\", "/"))
+//                                .toList()
+//                )
+//
+//                .videos(
+//                        vehicle.getMediaList() == null
+//                                ? List.of()
+//                                : vehicle.getMediaList().stream()
+//                                .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
+//                                //.map(VehicleMedia::getFilePath)
+//                                .map(media -> serverUrl+
+//                                        media.getFilePath().replace("\\", "/"))
+//                                .toList()
+//                )
+//                .build();
+//    }
 
     @Override
     public List<VehicleResponseDTO> getAllNonPremiumVehicle(Long customerId) {

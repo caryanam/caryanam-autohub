@@ -37,7 +37,6 @@ public class AdminServiceImpl implements AdminService {
     @Value("${spring.server.url}")
     private String serverUrl;
 
-
     //All dealer
     @Override
     public List<DealerResponseDTO> allDealer() {
@@ -63,24 +62,80 @@ public class AdminServiceImpl implements AdminService {
                         .city(dealer.getCity())
                         .state(dealer.getState())
                         .pinCode(dealer.getPinCode())
-                        .dealerLogo(dealer.getDealerLogo())
-                        .showroomImage(
-                                dealer.getShowroomImage() == null
-                                        ? null
-                                        : serverUrl+
-                                        dealer.getShowroomImage().replace("\\", "/")
-                        )
-                        .dealerLogo(
-                                dealer.getDealerLogo() == null
-                                        ? null
-                                        : serverUrl+
-                                        dealer.getDealerLogo().replace("\\", "/")
-                        )
+                        .dealerLogo(buildMediaUrl(dealer.getDealerLogo()))
+                        .showroomImage(buildMediaUrl(dealer.getShowroomImage()))
                         .dealerAccountStatus(dealer.getDealerAccountStatus())
                         .createdAt(dealer.getCreatedAt())
                         .build())
                 .toList();
     }
+
+ private String buildMediaUrl(String storedPath) {
+
+     if (storedPath == null || storedPath.isBlank()) {
+         return null;
+     }
+
+     String normalized = storedPath.replace("\\", "/").trim();
+
+     if (!normalized.startsWith("/")) {
+         normalized = "/" + normalized;
+     }
+
+     return serverUrl + normalized;
+ }
+
+
+
+
+
+
+
+
+
+//    //All dealer
+//    @Override
+//    public List<DealerResponseDTO> allDealer() {
+//
+//        List<Dealer> all = dealerRepository.findAll();
+//
+//        if (all.isEmpty()) {
+//            throw new ResourceNotFoundException("Dealer has no vehicles");
+//        }
+//
+//        return all.stream()
+//                .map(dealer -> DealerResponseDTO.builder()
+//                        .id(dealer.getId())
+//                        .businessName(dealer.getBusinessName())
+//                        .ownerName(dealer.getOwnerName())
+//                        .gstNumber(dealer.getGstNumber())
+//                        .yearsInBusiness(dealer.getYearsInBusiness())
+//                        .dealerMobile(dealer.getDealerMobile())
+//                        .executiveMobile(dealer.getExecutiveMobile())
+//                        .whatsapp(dealer.getWhatsapp())
+//                        .email(dealer.getEmail())
+//                        .address(dealer.getAddress())
+//                        .city(dealer.getCity())
+//                        .state(dealer.getState())
+//                        .pinCode(dealer.getPinCode())
+//                        .dealerLogo(dealer.getDealerLogo())
+//                        .showroomImage(
+//                                dealer.getShowroomImage() == null
+//                                        ? null
+//                                        : serverUrl+
+//                                        dealer.getShowroomImage().replace("\\", "/")
+//                        )
+//                        .dealerLogo(
+//                                dealer.getDealerLogo() == null
+//                                        ? null
+//                                        : serverUrl+
+//                                        dealer.getDealerLogo().replace("\\", "/")
+//                        )
+//                        .dealerAccountStatus(dealer.getDealerAccountStatus())
+//                        .createdAt(dealer.getCreatedAt())
+//                        .build())
+//                .toList();
+//    }
 
     //Dealer Count
     @Override
