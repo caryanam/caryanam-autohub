@@ -55,4 +55,15 @@ public interface DealerRepository extends JpaRepository<Dealer, Long> {
     List<Object[]> getMonthlyDealerAnalytics();
 
 
+//    @Query("SELECT d FROM Dealer d WHERE d.dealerAccountStatus = com.autohub.enums.DealerStatus.ACTIVE")
+//    List<Dealer> findAllActiveDealers();
+
+    @Query("""
+    SELECT d
+    FROM Dealer d
+    WHERE d.dealerAccountStatus = com.autohub.enums.DealerStatus.APPROVED
+""")
+    List<Dealer> findAllActiveDealers();
+
+
 }
