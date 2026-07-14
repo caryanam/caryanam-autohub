@@ -30,10 +30,10 @@ public class CustomerController {
     //delete
     @DeleteMapping("/delete-account")
     public ResponseEntity<String> deleteAccount(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestBody DeleteCustomerAccountRequestDTO request) {
 
         return ResponseEntity.ok(
-                customerService.deleteCustomerAccount(authHeader)
+                customerService.deleteCustomerAccount(request)
         );
     }
 

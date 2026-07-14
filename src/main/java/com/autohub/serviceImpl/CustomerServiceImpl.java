@@ -3,8 +3,10 @@ package com.autohub.serviceImpl;
 import com.autohub.configuration.JwtUtil;
 import com.autohub.dto.CustomerRegistrationRequestDTO;
 import com.autohub.dto.CustomerRegistrationResponseDTO;
+import com.autohub.dto.DeleteCustomerAccountRequestDTO;
 import com.autohub.entity.Customer;
 import com.autohub.enums.Role;
+import com.autohub.exception.ResourceNotFoundException;
 import com.autohub.repository.CustomerLeadRepository;
 import com.autohub.repository.CustomerRepository;
 import com.autohub.repository.WishlistRepository;
@@ -64,20 +66,25 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public String deleteCustomerAccount(String authHeader) {
+    public String deleteCustomerAccount(DeleteCustomerAccountRequestDTO request) {
 
-        String token = authHeader.substring(7);
-
-        Long customerId = jwtUtil.extractId(token);
-
-        Customer customer = customerRepository.findById(customerId)
+        Customer customer = customerRepository
+                .findByEmail(request.getUsername())
+                .or(() -> customerRepository.findByMobile(request.getUsername()))
                 .orElseThrow(() ->
-                        new RuntimeException("Customer not found"));
+                        new ResourceNotFoundException("Invalid email/mobile"));
 
-        wishlistRepository.deleteByCustomerId(customerId);
+        if (!passwordEncoder.matches(request.getPassword(), customer.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
 
-        customerLeadRepository.deleteByCustomerId(customerId);
+        // Delete Wishlist
+        wishlistRepository.deleteByCustomerId(customer.getId());
 
+        // Delete Customer Leads
+        customerLeadRepository.deleteByCustomerId(customer.getId());
+
+        // Delete Customer
         customerRepository.delete(customer);
 
         return "Customer account deleted successfully.";
