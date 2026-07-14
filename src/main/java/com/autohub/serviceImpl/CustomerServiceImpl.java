@@ -1,11 +1,15 @@
 package com.autohub.serviceImpl;
 
+import com.autohub.configuration.JwtUtil;
 import com.autohub.dto.CustomerRegistrationRequestDTO;
 import com.autohub.dto.CustomerRegistrationResponseDTO;
 import com.autohub.entity.Customer;
 import com.autohub.enums.Role;
+import com.autohub.repository.CustomerLeadRepository;
 import com.autohub.repository.CustomerRepository;
+import com.autohub.repository.WishlistRepository;
 import com.autohub.service.CustomerService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +26,12 @@ public class CustomerServiceImpl implements CustomerService {
     private final PasswordEncoder passwordEncoder;
 
     private final ModelMapper modelMapper;
+
+    private final WishlistRepository wishlistRepository;
+
+    private final CustomerLeadRepository customerLeadRepository;
+
+    private final JwtUtil jwtUtil;
 
 
     @Override
@@ -50,5 +60,26 @@ public class CustomerServiceImpl implements CustomerService {
 
 
         return modelMapper.map(save, CustomerRegistrationResponseDTO.class);
+    }
+
+    @Override
+    @Transactional
+    public String deleteCustomerAccount(String authHeader) {
+
+        String token = authHeader.substring(7);
+
+        Long customerId = jwtUtil.extractId(token);
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() ->
+                        new RuntimeException("Customer not found"));
+
+        wishlistRepository.deleteByCustomerId(customerId);
+
+        customerLeadRepository.deleteByCustomerId(customerId);
+
+        customerRepository.delete(customer);
+
+        return "Customer account deleted successfully.";
     }
 }

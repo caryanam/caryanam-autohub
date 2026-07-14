@@ -86,4 +86,9 @@ WHERE cl.customer.id = :customerId
     );
 
     //boolean existsByDealerIdAndCustomerId(Long dealerId,Long customerId);
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM CustomerLead cl WHERE cl.customer.id = :customerId")
+    void deleteByCustomerId(@Param("customerId") Long customerId);
 }

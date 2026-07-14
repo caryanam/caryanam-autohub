@@ -27,4 +27,14 @@ public class CustomerController {
         return new ResponseEntity<>(new ResponseDto(200, "Customer Registration Successfully", responseDTO), HttpStatus.OK);
     }
 
+    //delete
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<String> deleteAccount(
+            @RequestHeader("Authorization") String authHeader) {
+
+        return ResponseEntity.ok(
+                customerService.deleteCustomerAccount(authHeader)
+        );
+    }
+
 }

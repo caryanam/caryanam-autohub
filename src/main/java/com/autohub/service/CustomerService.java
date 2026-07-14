@@ -8,4 +8,6 @@ import org.springframework.stereotype.Service;
 public interface CustomerService {
 
     CustomerRegistrationResponseDTO customerRegistration(CustomerRegistrationRequestDTO requestDTO);
+
+    String deleteCustomerAccount(String authHeader);
 }
