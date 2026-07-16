@@ -4,6 +4,7 @@ import com.autohub.dto.FacebookPhotoPublishResponse;
 import com.autohub.dto.FacebookProperties;
 import com.autohub.exception.FacebookApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,7 +24,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
  * this module uses to turn one vehicle into one Facebook Page post (an
  * image post with a caption).
  * Never called directly from a controller - only from the async publish
- * worker (Phase 9/10), after a batch has already been committed.
+ * worker, after a batch has already been committed.
  */
 @Component
 @Slf4j
@@ -55,8 +56,8 @@ public class FacebookGraphClient {
         RetryCallback<FacebookPublishResult, RuntimeException> retryCallback =
                 (RetryContext context) -> {
 
-                    log.info("Attempt [{}] - publishing photo to Facebook Page [{}]",
-                            context.getRetryCount() + 1, properties.pageId());
+                    log.info("Attempt [{}] - publishing photo to Facebook Page [{}], imageUrl=[{}]",
+                            context.getRetryCount() + 1, properties.pageId(), imageUrl);
 
                     MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
                     form.add("url", imageUrl);
@@ -86,14 +87,16 @@ public class FacebookGraphClient {
                         // Invalid token, permission missing, invalid image URL, etc. -
                         // per the retry policy these must NOT be retried.
                         String body = ex.getResponseBodyAsString();
-                        log.error("Permanent Facebook API failure (status={}): {}", ex.getStatusCode(), body);
-                        throw new FacebookApiException(
-                                "Facebook API rejected the request: " + ex.getStatusCode(), body, true, ex);
+                        String reason = "Facebook API rejected the request (" + ex.getStatusCode() + "): "
+                                + extractFacebookErrorMessage(body);
+                        log.error("Permanent Facebook API failure. imageUrl=[{}] status=[{}] body=[{}]",
+                                imageUrl, ex.getStatusCode(), body);
+                        throw new FacebookApiException(reason, body, true, ex);
 
                     } catch (WebClientResponseException ex) {
                         // 5xx or 429 (rate limit) - transient, let facebookRetryTemplate retry.
-                        log.warn("Transient Facebook API failure (status={}), will retry if attempts remain",
-                                ex.getStatusCode());
+                        log.warn("Transient Facebook API failure (status={}), will retry if attempts remain. body=[{}]",
+                                ex.getStatusCode(), ex.getResponseBodyAsString());
                         throw ex;
 
                     } catch (JsonProcessingException ex) {
@@ -106,17 +109,59 @@ public class FacebookGraphClient {
                 (RetryContext recoveryContext) -> {
 
                     Throwable lastException = recoveryContext.getLastThrowable();
-                    String body = (lastException instanceof WebClientResponseException wcre)
-                            ? wcre.getResponseBodyAsString() : null;
 
-                    log.error("All retry attempts exhausted publishing to Facebook Page [{}]",
-                            properties.pageId(), lastException);
+                    String message;
+                    String body = null;
+                    if (lastException instanceof WebClientResponseException wcre) {
+                        body = wcre.getResponseBodyAsString();
+                        message = "Facebook API rejected the request (" + wcre.getStatusCode() + "): "
+                                + extractFacebookErrorMessage(body);
+                    } else {
+                        message = lastException != null ? lastException.getMessage() : "Unknown error";
+                    }
 
-                    return new FacebookPublishResult(false, body, null, null,
-                            lastException != null ? lastException.getMessage() : "Unknown error", false);
+                    log.error("All retry attempts exhausted publishing to Facebook Page [{}]. lastError=[{}]",
+                            properties.pageId(), message, lastException);
+
+                    return new FacebookPublishResult(false, body, null, null, message, false);
                 };
 
         return facebookRetryTemplate.execute(retryCallback, recoveryCallback);
+    }
+
+    /**
+     * Facebook's error body looks like:
+     * {"error":{"message":"...","type":"...","code":...,"error_subcode":...,
+     * "fbtrace_id":"..."}}. Pulls out the human-readable "message" (and code,
+     * if present) so it's actually useful in SocialPostBatchItem.errorMessage
+     * instead of just a bare HTTP status.
+     */
+    private String extractFacebookErrorMessage(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return "No response body from Facebook";
+        }
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode error = root.path("error");
+            if (error.isMissingNode()) {
+                return responseBody;
+            }
+            String message = error.path("message").asText("Unknown error");
+            int code = error.path("code").asInt(-1);
+            int subcode = error.path("error_subcode").asInt(-1);
+            StringBuilder sb = new StringBuilder(message);
+            if (code != -1) {
+                sb.append(" (code=").append(code);
+                if (subcode != -1) {
+                    sb.append(", subcode=").append(subcode);
+                }
+                sb.append(")");
+            }
+            return sb.toString();
+        } catch (JsonProcessingException ex) {
+            // Body wasn't JSON - just return it raw rather than losing it.
+            return responseBody;
+        }
     }
 
     private String buildPostUrl(String postId) {
