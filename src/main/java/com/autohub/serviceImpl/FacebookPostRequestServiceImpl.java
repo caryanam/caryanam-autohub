@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -162,20 +161,17 @@ public class FacebookPostRequestServiceImpl implements FacebookPostRequestServic
 
     private FacebookDealerVehicleStatusDTO toDealerVehicleStatusDTO(Vehicle vehicle) {
 
-        List<VehicleSocialPostRequest> active = socialPostRequestRepository.findActiveByVehicleId(vehicle.getId());
-
-        // The dashboard only needs the latest active/relevant request, if any.
-        VehicleSocialPostRequest latest = active.stream()
-                .max(Comparator.comparing(VehicleSocialPostRequest::getCreatedAt))
+        VehicleSocialPostRequest latest = socialPostRequestRepository
+                .findTopByVehicle_IdOrderByCreatedAtDesc(vehicle.getId())
                 .orElse(null);
 
         VehicleMedia primaryImage = findPrimaryImage(vehicle);
 
         boolean selectable = latest == null
                 || (latest.getApprovalStatus() != SocialPostApprovalStatus.PENDING
-                    && latest.getPublishStatus() != SocialPostPublishStatus.QUEUED
-                    && latest.getPublishStatus() != SocialPostPublishStatus.PROCESSING
-                    && latest.getPublishStatus() != SocialPostPublishStatus.PUBLISHED);
+                && latest.getPublishStatus() != SocialPostPublishStatus.QUEUED
+                && latest.getPublishStatus() != SocialPostPublishStatus.PROCESSING
+                && latest.getPublishStatus() != SocialPostPublishStatus.PUBLISHED);
 
         return FacebookDealerVehicleStatusDTO.builder()
                 .vehicleId(vehicle.getId())
@@ -189,6 +185,7 @@ public class FacebookPostRequestServiceImpl implements FacebookPostRequestServic
                 .approvalStatus(latest == null ? null : latest.getApprovalStatus())
                 .publishStatus(latest == null ? null : latest.getPublishStatus())
                 .facebookPostUrl(latest == null ? null : latest.getFacebookPostUrl())
+                .rejectionReason(latest == null ? null : latest.getRejectionReason())
                 .selectable(selectable)
                 .build();
     }

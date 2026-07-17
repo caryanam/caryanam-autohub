@@ -38,6 +38,9 @@ public class FacebookDealerVehicleStatusDTO {
 
     private String facebookPostUrl;
 
+    /** Populated only when approvalStatus is REJECTED - the admin's reason. */
+    private String rejectionReason;
+
     /**
      * Whether the dealer is currently allowed to select this vehicle and
      * click "Request Selected" - false if it's already PENDING, QUEUED,

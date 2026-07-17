@@ -34,6 +34,16 @@ public interface VehicleSocialPostRequestRepository extends JpaRepository<Vehicl
     List<VehicleSocialPostRequest> findActiveByVehicleId(@Param("vehicleId") Long vehicleId);
 
     /**
+     * Latest request for this vehicle regardless of status - including
+     * REJECTED, which findActiveByVehicleId deliberately excludes. Used
+     * only for dealer-facing display (e.g. showing a rejection reason),
+     * never for "is this vehicle currently blocked" logic - that must
+     * keep using findActiveByVehicleId so a rejected vehicle stays
+     * re-selectable.
+     */
+    java.util.Optional<VehicleSocialPostRequest> findTopByVehicle_IdOrderByCreatedAtDesc(Long vehicleId);
+
+    /**
      * Locks the selected rows for the duration of the bulk-approve
      * transaction ("Lock Requests" step) so two concurrent admin actions
      * cannot approve/publish the same request twice.
