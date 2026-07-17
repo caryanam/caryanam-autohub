@@ -43,6 +43,11 @@ public class CaptionGeneratorServiceImpl implements CaptionGeneratorService {
 
         if (vehicle.getDealer() != null) {
             caption.append("Dealer: ").append(vehicle.getDealer().getBusinessName()).append("\n");
+
+            String contactNumber = vehicle.getDealer().getDealerMobile();
+            if (contactNumber != null && !contactNumber.isBlank()) {
+                caption.append("Contact: ").append(contactNumber).append("\n");
+            }
         }
 
         caption.append("\n").append(buildVehicleUrl(vehicle)).append("\n\n");

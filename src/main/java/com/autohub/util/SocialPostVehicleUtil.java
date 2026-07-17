@@ -41,6 +41,6 @@ public final class SocialPostVehicleUtil {
         String base = websiteBaseUrl.endsWith("/")
                 ? websiteBaseUrl.substring(0, websiteBaseUrl.length() - 1)
                 : websiteBaseUrl;
-        return base + "/vehicle/" + vehicleId;
+        return base + "/car/" + vehicleId;
     }
 }
