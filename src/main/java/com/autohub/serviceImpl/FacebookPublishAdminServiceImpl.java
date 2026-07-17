@@ -7,10 +7,7 @@ import com.autohub.enums.SocialPostBatchStatus;
 import com.autohub.enums.SocialPostPublishStatus;
 import com.autohub.exception.BadRequestException;
 import com.autohub.exception.ResourceNotFoundException;
-import com.autohub.repository.DealerRepository;
-import com.autohub.repository.SocialPostBatchItemRepository;
-import com.autohub.repository.SocialPostBatchRepository;
-import com.autohub.repository.VehicleSocialPostRequestRepository;
+import com.autohub.repository.*;
 import com.autohub.service.FacebookPublishAdminService;
 import com.autohub.service.FacebookPublishWorkerService;
 import com.autohub.util.SocialPostVehicleUtil;
@@ -41,6 +38,11 @@ public class FacebookPublishAdminServiceImpl implements FacebookPublishAdminServ
     // Facebook allows a maximum of 3 retry attempts per the retry policy.
     @Value("${facebook.max-retry-count:3}")
     private int maxRetryCount;
+
+    // Base host that serves /uploads/** - used to turn a stored relative
+    // filePath into a full public URL for the admin dashboard image preview.
+    @Value("${spring.server.url}")
+    private String serverUrl;
 
     private final VehicleSocialPostRequestRepository socialPostRequestRepository;
 
@@ -97,7 +99,8 @@ public class FacebookPublishAdminServiceImpl implements FacebookPublishAdminServ
         Vehicle vehicle = request.getVehicle();
 
         VehicleMedia primaryImage = SocialPostVehicleUtil.findPrimaryImage(vehicle);
-        String primaryImageUrl = primaryImage == null ? null : primaryImage.getFilePath();
+        String primaryImageUrl = primaryImage == null ? null
+                : SocialPostVehicleUtil.buildImageUrl(serverUrl, primaryImage);
 
         return FacebookAdminVehicleRequestDTO.builder()
                 .requestId(request.getId())
