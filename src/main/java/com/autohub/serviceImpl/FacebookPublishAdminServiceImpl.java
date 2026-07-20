@@ -89,8 +89,20 @@ public class FacebookPublishAdminServiceImpl implements FacebookPublishAdminServ
     @Override
     public List<FacebookAdminVehicleRequestDTO> getDealerRequests(Long dealerId) {
 
-        return socialPostRequestRepository.findByDealer_Id(dealerId).stream()
+        List<VehicleSocialPostRequest> allRequests = socialPostRequestRepository.findByDealer_Id(dealerId);
+
+        // Group by vehicleId and keep only the latest request per vehicle
+        java.util.Map<Long, VehicleSocialPostRequest> latestRequests = allRequests.stream()
+                .collect(Collectors.toMap(
+                        r -> r.getVehicle().getId(),
+                        r -> r,
+                        (r1, r2) -> r1.getCreatedAt().isAfter(r2.getCreatedAt()) ? r1 : r2
+                ));
+
+        return latestRequests.values().stream()
                 .map(this::toAdminVehicleRequestDTO)
+                // sort by requested at descending
+                .sorted((a, b) -> b.getRequestedAt().compareTo(a.getRequestedAt()))
                 .toList();
     }
 
