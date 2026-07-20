@@ -24,6 +24,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class DealerOfferBroadcastEventListener {
 
+    /**
+     * Delay between each WhatsApp message send.
+     * Meta's Cloud API rate limit is 80 messages/second per phone number ID
+     * on most tiers. 500ms gap = max 2 msg/sec = well within limits even
+     * at 1000+ dealers, and avoids any burst throttling.
+     * Adjust down to 200ms if your Meta tier supports higher throughput
+     * and you need faster broadcast completion.
+     */
+    private static final long DELAY_BETWEEN_SENDS_MS = 500;
+
     private final DealerRepository dealerRepository;
     private final WhatsAppOfferClient whatsAppOfferClient;
     private final WhatsappOfferMessageLogRepository offerMessageLogRepository;
@@ -57,17 +67,27 @@ public class DealerOfferBroadcastEventListener {
             return;
         }
 
+        int totalDealers = activeDealers.size();
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
 
-        for (Dealer dealer : activeDealers) {
+        // ── Sequential send: one dealer at a time ──
+        // This guarantees Meta's rate limits are never hit regardless
+        // of dealer count, and gives us a clean per-dealer audit trail.
+        for (int i = 0; i < totalDealers; i++) {
 
-            // ── Validation: skip dealers with no WhatsApp number ──
+            Dealer dealer = activeDealers.get(i);
+            int currentPosition = i + 1;
+
+            log.info("Processing dealer [{}/{}] → id=[{}] name=[{}]",
+                    currentPosition, totalDealers,
+                    dealer.getId(), dealer.getOwnerName());
+
+            // ── Validation ──
             if (!StringUtils.hasText(dealer.getWhatsapp())) {
                 log.warn("Dealer [{}] '{}' has no WhatsApp number — skipping",
                         dealer.getId(), dealer.getOwnerName());
 
-                // Still persist a FAILED log so we have a complete audit trail
                 persistOfferLog(
                         event.offerId(),
                         dealer.getId(),
@@ -80,34 +100,44 @@ public class DealerOfferBroadcastEventListener {
                         "Dealer has no WhatsApp number configured"
                 );
                 failCount.incrementAndGet();
+
+                // Still apply delay even on skip so we don't hammer
+                // the log persistence layer either
+                sleepBetweenSends(currentPosition, totalDealers);
                 continue;
             }
 
             String normalizedNumber = normalizeToE164(dealer.getWhatsapp());
 
             try {
-                WhatsAppOfferClient.OfferSendResult result = whatsAppOfferClient.sendOfferTemplate(
-                        normalizedNumber,
-                        properties.offerTemplateName(),
-                        properties.offerLanguageCode(),
-                        event.metaImageHandle(),
-                        dealer.getOwnerName(),  // {{1}} — personalized per dealer
-                        event.offerDetails(),   // {{2}}
-                        event.benefits(),       // {{3}}
-                        event.contactInfo()     // {{4}}
-                );
+                // ── Send to this dealer ──
+                WhatsAppOfferClient.OfferSendResult result =
+                        whatsAppOfferClient.sendOfferTemplate(
+                                normalizedNumber,
+                                properties.offerTemplateName(),
+                                properties.offerLanguageCode(),
+                                event.metaImageHandle(),
+                                dealer.getOwnerName(),   // {{1}}
+                                event.offerDetails(),    // {{2}}
+                                event.benefits(),        // {{3}}
+                                event.contactInfo()      // {{4}}
+                        );
 
                 if (result.success()) {
                     successCount.incrementAndGet();
-                    log.info("✓ Offer sent to dealer [{}] '{}' → messageId=[{}]",
-                            dealer.getId(), dealer.getOwnerName(), result.whatsappMessageId());
+                    log.info("✓ [{}/{}] Sent to dealer [{}] '{}' → number=[{}] messageId=[{}]",
+                            currentPosition, totalDealers,
+                            dealer.getId(), dealer.getOwnerName(),
+                            normalizedNumber, result.whatsappMessageId());
                 } else {
                     failCount.incrementAndGet();
-                    log.error("✗ Offer failed for dealer [{}] '{}': {}",
-                            dealer.getId(), dealer.getOwnerName(), result.errorMessage());
+                    log.error("✗ [{}/{}] Failed for dealer [{}] '{}' → number=[{}] error=[{}]",
+                            currentPosition, totalDealers,
+                            dealer.getId(), dealer.getOwnerName(),
+                            normalizedNumber, result.errorMessage());
                 }
 
-                // Persist log for EVERY dealer regardless of success/failure
+                // Persist log regardless of success/failure
                 persistOfferLog(
                         event.offerId(),
                         dealer.getId(),
@@ -124,8 +154,9 @@ public class DealerOfferBroadcastEventListener {
 
             } catch (Exception ex) {
                 failCount.incrementAndGet();
-                log.error("Unexpected error sending offer to dealerId=[{}]: {}",
-                        dealer.getId(), ex.getMessage(), ex);
+                log.error("✗ [{}/{}] Unexpected error for dealer [{}] '{}': {}",
+                        currentPosition, totalDealers,
+                        dealer.getId(), dealer.getOwnerName(), ex.getMessage(), ex);
 
                 persistOfferLog(
                         event.offerId(),
@@ -139,20 +170,42 @@ public class DealerOfferBroadcastEventListener {
                         ex.getMessage()
                 );
             }
+
+            // ── Delay before next send ──
+            // Skip delay after the last dealer — no point waiting
+            // when there's nobody left to send to
+            sleepBetweenSends(currentPosition, totalDealers);
         }
 
-        // Update offer record with final broadcast statistics
+        // ── Update offer broadcast stats ──
         updateOfferStats(event.offerId(), successCount.get(), failCount.get());
 
-        log.info("=== OFFER BROADCAST COMPLETED === offerId=[{}] ✓ Success=[{}] ✗ Failed=[{}]",
-                event.offerId(), successCount.get(), failCount.get());
+        log.info("=== OFFER BROADCAST COMPLETED === offerId=[{}] " +
+                        "Total=[{}] ✓ Success=[{}] ✗ Failed=[{}]",
+                event.offerId(), totalDealers,
+                successCount.get(), failCount.get());
     }
 
     /**
-     * Persists one log row per dealer per offer send attempt.
-     * Uses REQUIRES_NEW so each log entry commits independently —
-     * a failure saving one log row never blocks the next dealer's send.
+     * Waits between sends. Skips the delay after the last dealer.
+     * Swallows InterruptedException gracefully so one interrupted
+     * sleep never aborts the entire broadcast loop.
      */
+    private void sleepBetweenSends(int currentPosition, int totalDealers) {
+        if (currentPosition >= totalDealers) {
+            return; // last dealer — no delay needed
+        }
+        try {
+            log.debug("Waiting {}ms before next send ({}/{} done)...",
+                    DELAY_BETWEEN_SENDS_MS, currentPosition, totalDealers);
+            Thread.sleep(DELAY_BETWEEN_SENDS_MS);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.warn("Send delay interrupted at dealer [{}/{}] — continuing broadcast",
+                    currentPosition, totalDealers);
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void persistOfferLog(
             Long offerId,
@@ -181,12 +234,10 @@ public class DealerOfferBroadcastEventListener {
 
             offerMessageLogRepository.save(logEntry);
 
-            log.debug("Offer log persisted → offerId=[{}] dealerId=[{}] status=[{}]",
+            log.debug("Log persisted → offerId=[{}] dealerId=[{}] status=[{}]",
                     offerId, dealerId, status);
 
         } catch (Exception ex) {
-            // Last-resort safety — log persistence failure must never
-            // propagate and interrupt the broadcast loop
             log.error("Failed to persist offer log for offerId=[{}] dealerId=[{}]: {}",
                     offerId, dealerId, ex.getMessage());
         }
