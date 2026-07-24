@@ -8,6 +8,12 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public record WhatsAppProperties(
 
+        @NotBlank(message = "whatsapp.vehicle-template-name must be configured")
+        String vehicleTemplateName,
+
+        @NotBlank(message = "whatsapp.vehicle-language-code must be configured")
+        String vehicleLanguageCode,
+
         @NotBlank(message = "whatsapp.access-token must be configured")
         String accessToken,
 
