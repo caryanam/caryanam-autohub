@@ -26,6 +26,11 @@ public class DealerRegisterDTO {
     )
     private String ownerName;
 
+    @NotNull(message = "Date of Birth is Required")
+    @Past(message = "Date of Birth must be in the past")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private java.time.LocalDate dateOfBirth;
+
     @Pattern(
             regexp = "^$|^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$",
             message = "GST Number must be a valid 15-digit Indian GST Number"
@@ -58,8 +63,13 @@ public class DealerRegisterDTO {
     )
     private String whatsapp;
 
-   @Email(message = "Invalid email format")
-   private String email;
+    @NotBlank(message = "Email is Required")
+    @Email(message = "Invalid email format")
+    @Pattern(
+            regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$",
+            message = "Please provide a valid email address (e.g., example@domain.com)"
+    )
+    private String email;
 
     @NotBlank(message = "Password is Required")
     @Size(min = 6, message = "Password must be at least 6 characters")

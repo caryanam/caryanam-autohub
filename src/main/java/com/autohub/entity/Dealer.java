@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +27,8 @@ public class Dealer {
     @Column(nullable = false)
     private String ownerName;
 
+    private LocalDate dateOfBirth;
+
     private String gstNumber;
 
     @Column(nullable = false)
@@ -39,6 +42,7 @@ public class Dealer {
     @Column(nullable = false)
     private String whatsapp;
 
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)

@@ -1,9 +1,7 @@
 package com.autohub.dto;
 
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
@@ -16,6 +14,11 @@ public class UpdateDealerProfileRequestDTO {
             message = "Business Name must be between 3 and 100 characters"
     )
     private String businessName;
+
+    @NotNull(message = "Date of Birth is Required")
+    @Past(message = "Date of Birth must be in the past")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private java.time.LocalDate dateOfBirth;
 //
 //    @NotBlank(message = "Owner Name is Required")
 //    @Size(

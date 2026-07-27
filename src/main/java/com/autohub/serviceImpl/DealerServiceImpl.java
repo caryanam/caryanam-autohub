@@ -74,10 +74,6 @@ public class DealerServiceImpl implements DealerService {
             throw new RuntimeException("Mobile already registered");
         }
 
-//        if (dealerRepository.existsByGstNumber(dto.getGstNumber())) {
-//            throw new RuntimeException("GST Number already registered");
-//        }
-
         if (dealerRepository.existsByWhatsapp(dto.getWhatsapp())) {
             throw new RuntimeException("WhatsApp number already registered");
         }
@@ -85,6 +81,7 @@ public class DealerServiceImpl implements DealerService {
         Dealer dealer = new Dealer();
         dealer.setBusinessName(dto.getBusinessName());
         dealer.setOwnerName(dto.getOwnerName());
+        dealer.setDateOfBirth(dto.getDateOfBirth());
         dealer.setGstNumber(dto.getGstNumber());
         dealer.setYearsInBusiness(dto.getYearsInBusiness());
         dealer.setDealerMobile(dto.getDealerMobile());
@@ -378,6 +375,7 @@ public class DealerServiceImpl implements DealerService {
                 .id(dealer.getId())
                 .businessName(dealer.getBusinessName())
                 .ownerName(dealer.getOwnerName())
+                .dateOfBirth(dealer.getDateOfBirth())
                 .gstNumber(dealer.getGstNumber())
                 .yearsInBusiness(dealer.getYearsInBusiness())
                 .dealerMobile(dealer.getDealerMobile())
@@ -464,6 +462,7 @@ public class DealerServiceImpl implements DealerService {
         dealer.setBusinessName(dto.getBusinessName());
         dealer.setWhatsapp(dto.getWhatsapp());
         dealer.setExecutiveMobile(dto.getExecutiveMobile());
+        dealer.setDateOfBirth(dto.getDateOfBirth());
         dealer.setAddress(dto.getAddress());
         dealer.setCity(dto.getCity());
         dealer.setPinCode(dto.getPinCode());

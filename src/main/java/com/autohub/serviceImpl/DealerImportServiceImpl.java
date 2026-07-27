@@ -39,6 +39,10 @@ public class DealerImportServiceImpl
             int success = 0;
             int failed = 0;
 
+            java.util.Set<String> processedMobiles = new java.util.HashSet<>();
+            java.util.Set<String> processedWhatsapps = new java.util.HashSet<>();
+            java.util.Set<String> processedEmails = new java.util.HashSet<>();
+
             for (int rowNum = 1;
                  rowNum <= sheet.getLastRowNum();
                  rowNum++) {
@@ -76,19 +80,32 @@ public class DealerImportServiceImpl
 
                     String mobile =
                             getStringValue(formatter, row, 3);
-
-                    dealer.setDealerMobile(
-                            mobile.isBlank()
-                                    ? "NA_" + rowNum
-                                    : mobile);
+                    if (mobile.isBlank()) {
+                        mobile = "NA_" + rowNum;
+                    } else {
+                        if (dealerRepository.existsByDealerMobile(mobile)) {
+                            throw new RuntimeException("Mobile already registered in system: " + mobile);
+                        }
+                        if (!processedMobiles.add(mobile)) {
+                            throw new RuntimeException("Duplicate mobile found in excel: " + mobile);
+                        }
+                    }
+                    dealer.setDealerMobile(mobile);
 
                     String whatsapp =
                             getStringValue(formatter, row, 4);
-
-                    dealer.setWhatsapp(
-                            whatsapp.isBlank()
-                                    ? dealer.getDealerMobile()
-                                    : whatsapp);
+                    if (whatsapp.isBlank()) {
+                        whatsapp = dealer.getDealerMobile();
+                    }
+                    if (!whatsapp.startsWith("NA_")) {
+                        if (dealerRepository.existsByWhatsapp(whatsapp)) {
+                            throw new RuntimeException("WhatsApp number already registered in system: " + whatsapp);
+                        }
+                        if (!processedWhatsapps.add(whatsapp)) {
+                            throw new RuntimeException("Duplicate WhatsApp number found in excel: " + whatsapp);
+                        }
+                    }
+                    dealer.setWhatsapp(whatsapp);
 
                     String password =
                             getStringValue(formatter, row, 5);
@@ -131,11 +148,18 @@ public class DealerImportServiceImpl
 
                     String email = getStringValue(formatter, row, 11);
 
-                    dealer.setEmail(
-                            email != null && !email.trim().isEmpty()
-                                    ? email.trim()
-                                    : null
-                    );
+                    if (email != null && !email.trim().isEmpty()) {
+                        email = email.trim();
+                        if (dealerRepository.existsByEmail(email)) {
+                            throw new RuntimeException("Email already registered in system: " + email);
+                        }
+                        if (!processedEmails.add(email)) {
+                            throw new RuntimeException("Duplicate email found in excel: " + email);
+                        }
+                        dealer.setEmail(email);
+                    } else {
+                        dealer.setEmail(null);
+                    }
                     dealer.setRole(Role.DEALER);
 
                     dealer.setDealerAccountStatus(DealerStatus.APPROVED);

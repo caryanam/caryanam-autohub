@@ -73,7 +73,7 @@ public class VehicleServiceImpl implements VehicleService {
                     .findTopByDealerIdOrderByPaymentIdDesc(dealerId)
                     .orElseThrow(() ->
                             new RuntimeException(
-                                    "Your free trial has expired. Please purchase a subscription plan."));
+                                    "Your free trial has expired. Please upgrade your subscription plan."));
 
             if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
 
@@ -100,18 +100,8 @@ public class VehicleServiceImpl implements VehicleService {
         Long vehicleCount = vehicleRepository.countByDealer_Id(dealerId);
 
         if (freeTrialActive) {
-
-            // Free Trial = BASIC Plan Limit
-            int vehicleLimit = SubscriptionPlan.BASIC.getVehicleLimit();
-
-            if (vehicleCount >= vehicleLimit) {
-
-                throw new RuntimeException(
-                        "Free trial allows only "
-                                + vehicleLimit
-                                + " vehicles.");
-            }
-
+            // Free Trial allows unlimited vehicles
+            // No limit check required during the 1-month free trial period
         } else {
 
             if (dealer.getSubscriptionPlan() != null
@@ -132,6 +122,21 @@ public class VehicleServiceImpl implements VehicleService {
             }
         }
 
+        // Duplicate Vehicle Check
+        List<Vehicle> dealerVehicles = vehicleRepository.findByDealerId(dealerId);
+        boolean isDuplicate = dealerVehicles.stream().anyMatch(v -> 
+                v.getBrand() != null && v.getBrand().equalsIgnoreCase(vehicleRequestDTO.getBrand()) &&
+                v.getModel() != null && v.getModel().equalsIgnoreCase(vehicleRequestDTO.getModel()) &&
+                v.getVariant() != null && v.getVariant().equalsIgnoreCase(vehicleRequestDTO.getVariant()) &&
+                v.getCity() != null && v.getCity().equalsIgnoreCase(vehicleRequestDTO.getCity()) &&
+                v.getFuelType() != null && v.getFuelType().equalsIgnoreCase(vehicleRequestDTO.getFuelType() != null ? vehicleRequestDTO.getFuelType().trim() : null) &&
+                v.getRegistrationYear() != null && v.getRegistrationYear().equals(vehicleRequestDTO.getRegistrationYear())
+        );
+
+        if (isDuplicate) {
+            throw new RuntimeException("Duplicate vehicle: This vehicle already exists in your inventory.");
+        }
+
 
         //Upload Image Validation Minimum 10 image required to add vehicle
         if (images == null || images.size() < 10) {
@@ -139,11 +144,6 @@ public class VehicleServiceImpl implements VehicleService {
                     "Minimum 10 images are required");
         }
 
-        //Upload Video Validation required to add vehicle
-        if (videos == null || videos.isEmpty()) {
-            throw new RuntimeException(
-                    "Minimum 1 video is required");
-        }
 
         for (MultipartFile image : images) {
 
@@ -287,6 +287,11 @@ public class VehicleServiceImpl implements VehicleService {
 
             for (MultipartFile file : videos) {
 
+                // Empty File Validation (Skip empty files if video is optional)
+                if (file.isEmpty()) {
+                    continue;
+                }
+
                 String contentType = file.getContentType();
 
                 // Video Type Validation
@@ -296,14 +301,9 @@ public class VehicleServiceImpl implements VehicleService {
                                 || contentType.equalsIgnoreCase("video/x-msvideo"))) {
 
                     throw new RuntimeException(
-                            "Minimum 1 video allowed with size under 10 mb Only MP4, MOV and AVI videos are allowed");
+                            "Only MP4, MOV and AVI videos are allowed");
                 }
 
-                // Empty File Validation
-                if (file.isEmpty()) {
-                    throw new RuntimeException(
-                            "Video file cannot be empty");
-                }
 
                 // File Size Validation
                 if (file.getSize() > maxVideoSize) {

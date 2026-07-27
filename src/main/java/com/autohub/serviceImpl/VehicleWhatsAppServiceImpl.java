@@ -76,6 +76,11 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
         }
 
         String dealerWhatsApp = normalizeToE164(dealer.getWhatsapp());
+        if (dealerWhatsApp == null) {
+            throw new RuntimeException(
+                    "Your WhatsApp number format is invalid. " +
+                            "Please update your profile with a valid Indian mobile number.");
+        }
 
         // ── Step 3: Get first image of this vehicle from DB ──
         List<VehicleMedia> mediaList = mediaRepository.findByVehicleId(vehicleId);
@@ -248,9 +253,67 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
         return value != null ? value : "N/A";
     }
 
+    /**
+     * Converts any real-world Indian mobile number format to the
+     * E.164 digits-only format Meta requires (e.g. 919876543210).
+     *
+     * Handles all formats found in practice:
+     *   9876543210        → 919876543210   (10 digit clean)
+     *   919876543210      → 919876543210   (already correct 12 digit)
+     *   +919876543210     → 919876543210   (+ prefix)
+     *   +91 9876543210    → 919876543210   (+ and space)
+     *   09876543210       → 919876543210   (leading 0 — ISD habit)
+     *   0091 9876543210   → 919876543210   (0091 prefix)
+     *   91 98765 43210    → 919876543210   (formatted with spaces)
+     *   910 9876543210    → 919876543210   (910 prefix edge case)
+     *
+     * Returns null if the number cannot be normalized to a valid
+     * 12-digit Indian mobile number — caller must skip this dealer.
+     */
     private String normalizeToE164(String rawNumber) {
+
+        if (rawNumber == null || rawNumber.isBlank()) {
+            return null;
+        }
+
+        // Strip everything except digits
         String digits = rawNumber.replaceAll("[^0-9]", "");
-        return digits.length() == 10 ? "91" + digits : digits;
+
+        // Already correct: 91 + 10 digit Indian number = 12 digits
+        // e.g. 919876543210 or +919876543210
+        if (digits.length() == 12 && digits.startsWith("91")) {
+            return digits;
+        }
+
+        // Clean 10-digit Indian mobile number — just prefix 91
+        // e.g. 9876543210
+        if (digits.length() == 10) {
+            return "91" + digits;
+        }
+
+        // 11 digits with leading 0 (e.g. 09876543210) — strip 0, prefix 91
+        if (digits.length() == 11 && digits.startsWith("0")) {
+            return "91" + digits.substring(1);
+        }
+
+        // 13 digits with 0091 prefix (e.g. 00919876543210) — strip 00, keep rest
+        // Result: 919876543210 (12 digits correct)
+        if (digits.length() == 13 && digits.startsWith("0091")) {
+            return digits.substring(2);
+        }
+
+        // 13 digits starting with 910 — edge case where someone stored
+        // country code + leading 0 (e.g. 910 9876543210)
+        if (digits.length() == 13 && digits.startsWith("910")) {
+            return "91" + digits.substring(3);
+        }
+
+        // Unrecognized format — return null so caller can skip and log properly
+        // rather than sending garbage to Meta
+        log.warn("Cannot normalize WhatsApp number to E164: '{}' → " +
+                        "digits='{}' length={} — this dealer will be skipped",
+                rawNumber, digits, digits.length());
+        return null;
     }
 
     private String resolveMimeType(String filename) {

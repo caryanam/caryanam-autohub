@@ -18,6 +18,8 @@ public class DealerResponseDTO {
 
     private String businessName;
     private String ownerName;
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private java.time.LocalDate dateOfBirth;
     private String gstNumber;
     private Integer yearsInBusiness;
 
