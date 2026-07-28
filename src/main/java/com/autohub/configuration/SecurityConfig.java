@@ -52,6 +52,10 @@ public class SecurityConfig {
 
                                 //Permit All
                                 .requestMatchers(
+                                        "/api/webhook",
+                                        "/api/webhook/**"
+                                ).permitAll()
+                                .requestMatchers(
                                         "/api/auth/**"
                                         ,"/api/customer/**"
                                         ,"/api/pincode/**"
@@ -71,9 +75,6 @@ public class SecurityConfig {
                                         "/swagger-ui.html",
                                         "/v3/api-docs/**"
                                 ).permitAll()
-
-                                .requestMatchers("/api/webhook/whatsapp").permitAll()
-                                .requestMatchers("/api/webhook/whatsapp/**").permitAll()
 
                                 .requestMatchers(
                                         "/uploads/**","/api/olx/**")

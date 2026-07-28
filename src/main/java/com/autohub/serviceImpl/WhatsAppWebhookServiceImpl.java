@@ -172,9 +172,14 @@ public class WhatsAppWebhookServiceImpl implements WhatsAppWebhookService {
         if (!leadLogs.isEmpty()) {
             leadLogs.forEach(log -> {
                 log.setDeliveryStatus(deliveryStatus);
+                if (deliveryStatus == WhatsappDeliveryStatus.FAILED) {
+                    log.setStatus(com.autohub.enums.WhatsappMessageStatus.FAILED);
+                }
+                String webhookMsg = " | WEBHOOK_" + deliveryStatus.name() + ": " + statusNode.toString();
+                log.setResponsePayload(log.getResponsePayload() != null ? log.getResponsePayload() + webhookMsg : webhookMsg);
+                
                 if (finalErrorDetails != null) {
-                    log.setResponsePayload(
-                            log.getResponsePayload() + " | DELIVERY_ERROR: " + finalErrorDetails);
+                    log.setResponsePayload(log.getResponsePayload() + " | DELIVERY_ERROR: " + finalErrorDetails);
                 }
             });
             messageLogRepository.saveAll(leadLogs);
@@ -188,6 +193,12 @@ public class WhatsAppWebhookServiceImpl implements WhatsAppWebhookService {
         if (!offerLogs.isEmpty()) {
             offerLogs.forEach(log -> {
                 log.setDeliveryStatus(deliveryStatus);
+                if (deliveryStatus == WhatsappDeliveryStatus.FAILED) {
+                    log.setStatus(com.autohub.enums.WhatsappMessageStatus.FAILED);
+                }
+                String webhookMsg = " | WEBHOOK_" + deliveryStatus.name() + ": " + statusNode.toString();
+                log.setResponsePayload(log.getResponsePayload() != null ? log.getResponsePayload() + webhookMsg : webhookMsg);
+                
                 if (finalErrorDetails != null) {
                     log.setErrorMessage(finalErrorDetails);
                 }
@@ -203,6 +214,12 @@ public class WhatsAppWebhookServiceImpl implements WhatsAppWebhookService {
         if (!vehicleLogs.isEmpty()) {
             vehicleLogs.forEach(log -> {
                 log.setDeliveryStatus(deliveryStatus);
+                if (deliveryStatus == WhatsappDeliveryStatus.FAILED) {
+                    log.setStatus(com.autohub.enums.WhatsappMessageStatus.FAILED);
+                }
+                String webhookMsg = " | WEBHOOK_" + deliveryStatus.name() + ": " + statusNode.toString();
+                log.setResponsePayload(log.getResponsePayload() != null ? log.getResponsePayload() + webhookMsg : webhookMsg);
+                
                 if (finalErrorDetails != null) {
                     log.setErrorMessage(finalErrorDetails);
                 }

@@ -19,7 +19,7 @@ public class RCValidationController {
 
     @PostMapping("/rc")
     public ResponseEntity<String> validateRC(@RequestBody Map<String, Object> requestBody) {
-        
+
         // IDSPay Production Base URL + Endpoint
         String idspayUrl = "https://javabackend.idspay.in/api/v1/prod/srv3/rc-pro";
 
