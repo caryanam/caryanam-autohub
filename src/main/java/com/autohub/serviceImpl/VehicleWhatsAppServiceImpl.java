@@ -64,7 +64,7 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
                     "Access denied. This vehicle does not belong to your account.");
         }
 
-        // ── Step 2: Validate dealer has a WhatsApp number ──
+        // ── Step 2: Validate dealer exists and has a WhatsApp number ──
         Dealer dealer = dealerRepository.findById(dealerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Dealer not found with id: " + dealerId));
@@ -75,12 +75,18 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
                             "Please update your profile with a valid WhatsApp number.");
         }
 
+        // ── FIX: Normalize with bulletproof logic, throw if unrecognized ──
         String dealerWhatsApp = normalizeToE164(dealer.getWhatsapp());
+
         if (dealerWhatsApp == null) {
             throw new RuntimeException(
-                    "Your WhatsApp number format is invalid. " +
-                            "Please update your profile with a valid Indian mobile number.");
+                    "Your WhatsApp number '" + dealer.getWhatsapp() + "' is in an " +
+                            "unrecognized format. Please update your profile with a valid " +
+                            "10-digit Indian mobile number.");
         }
+
+        log.info("Normalized dealer WhatsApp: '{}' → '{}'",
+                dealer.getWhatsapp(), dealerWhatsApp);
 
         // ── Step 3: Get first image of this vehicle from DB ──
         List<VehicleMedia> mediaList = mediaRepository.findByVehicleId(vehicleId);
@@ -215,16 +221,20 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
 
     @Override
     public long getVehicleShareCount(Long vehicleId) {
-        return shareLogRepository.countByVehicleIdAndStatus(vehicleId, WhatsappMessageStatus.SUCCESS);
+        return shareLogRepository.countByVehicleIdAndStatus(
+                vehicleId, WhatsappMessageStatus.SUCCESS);
     }
 
     // ── Private helpers ──
 
     private String buildVehicleName(Vehicle vehicle) {
         StringBuilder name = new StringBuilder();
-        if (StringUtils.hasText(vehicle.getBrand()))   name.append(vehicle.getBrand()).append(" ");
-        if (StringUtils.hasText(vehicle.getModel()))   name.append(vehicle.getModel());
-        if (StringUtils.hasText(vehicle.getVariant())) name.append(" ").append(vehicle.getVariant());
+        if (StringUtils.hasText(vehicle.getBrand()))
+            name.append(vehicle.getBrand()).append(" ");
+        if (StringUtils.hasText(vehicle.getModel()))
+            name.append(vehicle.getModel());
+        if (StringUtils.hasText(vehicle.getVariant()))
+            name.append(" ").append(vehicle.getVariant());
         return name.toString().trim();
     }
 
@@ -268,7 +278,7 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
      *   910 9876543210    → 919876543210   (910 prefix edge case)
      *
      * Returns null if the number cannot be normalized to a valid
-     * 12-digit Indian mobile number — caller must skip this dealer.
+     * 12-digit Indian mobile number — caller must throw or skip.
      */
     private String normalizeToE164(String rawNumber) {
 
@@ -280,13 +290,11 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
         String digits = rawNumber.replaceAll("[^0-9]", "");
 
         // Already correct: 91 + 10 digit Indian number = 12 digits
-        // e.g. 919876543210 or +919876543210
         if (digits.length() == 12 && digits.startsWith("91")) {
             return digits;
         }
 
         // Clean 10-digit Indian mobile number — just prefix 91
-        // e.g. 9876543210
         if (digits.length() == 10) {
             return "91" + digits;
         }
@@ -297,21 +305,18 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
         }
 
         // 13 digits with 0091 prefix (e.g. 00919876543210) — strip 00, keep rest
-        // Result: 919876543210 (12 digits correct)
         if (digits.length() == 13 && digits.startsWith("0091")) {
             return digits.substring(2);
         }
 
-        // 13 digits starting with 910 — edge case where someone stored
-        // country code + leading 0 (e.g. 910 9876543210)
+        // 13 digits starting with 910 — country code + leading 0 edge case
         if (digits.length() == 13 && digits.startsWith("910")) {
             return "91" + digits.substring(3);
         }
 
-        // Unrecognized format — return null so caller can skip and log properly
-        // rather than sending garbage to Meta
+        // Unrecognized format — return null so caller handles it cleanly
         log.warn("Cannot normalize WhatsApp number to E164: '{}' → " +
-                        "digits='{}' length={} — this dealer will be skipped",
+                        "digits='{}' length={}",
                 rawNumber, digits, digits.length());
         return null;
     }

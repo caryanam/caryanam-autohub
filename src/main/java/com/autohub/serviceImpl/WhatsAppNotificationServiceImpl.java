@@ -35,16 +35,32 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
     @Override
     public void notifyDealerOfNewLead(LeadCreatedEvent event) {
 
-        // ---- Validation block (Requirement #20) ----
+        // ── Validation ──
         try {
             validate(event);
         } catch (InvalidDealerContactException ex) {
             log.error("Validation failed for leadId [{}]: {}", event.leadId(), ex.getMessage());
-            persistLog(event, WhatsappMessageStatus.FAILED, null, "{}", "{\"error\":\"" + ex.getMessage() + "\"}");
-            return; // do not attempt the API call at all
+            persistLog(event, WhatsappMessageStatus.FAILED, null,
+                    "{}", "{\"error\":\"" + ex.getMessage() + "\"}");
+            return;
         }
 
+        // ── FIX: Normalize dealer number with bulletproof logic ──
         String normalizedMobile = normalizeToE164(event.dealerWhatsappNumber());
+
+        // If normalization fails, log and abort — don't send garbage to Meta
+        if (normalizedMobile == null) {
+            log.error("Cannot normalize dealer WhatsApp number for leadId [{}]: '{}'",
+                    event.leadId(), event.dealerWhatsappNumber());
+            persistLog(event, WhatsappMessageStatus.FAILED, null,
+                    "{}",
+                    "{\"error\":\"Invalid WhatsApp number format: '"
+                            + event.dealerWhatsappNumber() + "'\"}");
+            return;
+        }
+
+        log.info("Normalized dealer number: '{}' → '{}'",
+                event.dealerWhatsappNumber(), normalizedMobile);
 
         WhatsAppTemplateRequest request = WhatsAppTemplateRequest.forNewLead(
                 normalizedMobile,
@@ -56,35 +72,49 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
         );
 
         try {
-            WhatsAppClient.WhatsAppApiCallResult result = whatsAppClient.sendTemplateMessage(request);
+            WhatsAppClient.WhatsAppApiCallResult result =
+                    whatsAppClient.sendTemplateMessage(request);
 
             if (result.success()) {
-                persistLog(event, WhatsappMessageStatus.SUCCESS, result.whatsappMessageId(),
-                        result.requestPayload(), result.responsePayload());
-                log.info("WhatsApp notification SUCCESS for leadId [{}], dealerId [{}], messageId [{}]",
+                persistLog(event, WhatsappMessageStatus.SUCCESS,
+                        result.whatsappMessageId(),
+                        result.requestPayload(),
+                        result.responsePayload());
+                log.info("WhatsApp notification SUCCESS for leadId [{}], " +
+                                "dealerId [{}], messageId [{}]",
                         event.leadId(), event.dealerId(), result.whatsappMessageId());
             } else {
                 persistLog(event, WhatsappMessageStatus.FAILED, null,
                         result.requestPayload(), result.responsePayload());
-                log.error("WhatsApp notification FAILED (after retries) for leadId [{}], dealerId [{}]: {}",
+                log.error("WhatsApp notification FAILED (after retries) for " +
+                                "leadId [{}], dealerId [{}]: {}",
                         event.leadId(), event.dealerId(), result.errorMessage());
             }
 
         } catch (WhatsAppApiException ex) {
-            // Permanent (4xx) failure - not retried by RetryTemplate, caught here directly
+            // Permanent 4xx failure — not retried, caught here directly
             persistLog(event, WhatsappMessageStatus.FAILED, null,
-                    "{}", ex.getResponseBody() != null ? ex.getResponseBody() : "{\"error\":\"" + ex.getMessage() + "\"}");
-            log.error("WhatsApp notification permanently failed for leadId [{}]: {}", event.leadId(), ex.getMessage(), ex);
+                    "{}",
+                    ex.getResponseBody() != null
+                            ? ex.getResponseBody()
+                            : "{\"error\":\"" + ex.getMessage() + "\"}");
+            log.error("WhatsApp notification permanently failed for leadId [{}]: {}",
+                    event.leadId(), ex.getMessage(), ex);
 
         } catch (Exception ex) {
-            // Absolute last-resort safety net - lead data is already committed and safe
-            persistLog(event, WhatsappMessageStatus.FAILED, null, "{}",
+            // Absolute last-resort safety net — lead data is already committed and safe
+            persistLog(event, WhatsappMessageStatus.FAILED, null,
+                    "{}",
                     "{\"error\":\"" + ex.getMessage() + "\"}");
-            log.error("Unexpected exception sending WhatsApp notification for leadId [{}]", event.leadId(), ex);
+            log.error("Unexpected exception sending WhatsApp notification for leadId [{}]",
+                    event.leadId(), ex);
         }
     }
 
-    /** Requirement #20: validate dealer WhatsApp number, lead data, and required template vars. */
+    /**
+     * Validates all required fields before attempting the API call.
+     * Throws InvalidDealerContactException on any missing/blank field.
+     */
     private void validate(LeadCreatedEvent event) {
         if (event == null) {
             throw new InvalidDealerContactException("Lead event payload is null");
@@ -94,13 +124,16 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
                     "Dealer [" + event.dealerId() + "] has no WhatsApp number configured");
         }
         if (!StringUtils.hasText(event.customerName())) {
-            throw new InvalidDealerContactException("Customer name is empty for leadId [" + event.leadId() + "]");
+            throw new InvalidDealerContactException(
+                    "Customer name is empty for leadId [" + event.leadId() + "]");
         }
         if (!StringUtils.hasText(event.customerMobile())) {
-            throw new InvalidDealerContactException("Customer mobile is empty for leadId [" + event.leadId() + "]");
+            throw new InvalidDealerContactException(
+                    "Customer mobile is empty for leadId [" + event.leadId() + "]");
         }
         if (!StringUtils.hasText(event.vehicleDisplayName())) {
-            throw new InvalidDealerContactException("Vehicle name is empty for leadId [" + event.leadId() + "]");
+            throw new InvalidDealerContactException(
+                    "Vehicle name is empty for leadId [" + event.leadId() + "]");
         }
     }
 
@@ -119,7 +152,7 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
      *   910 9876543210    → 919876543210   (910 prefix edge case)
      *
      * Returns null if the number cannot be normalized to a valid
-     * 12-digit Indian mobile number — caller must skip this dealer.
+     * 12-digit Indian mobile number — caller must handle null.
      */
     private String normalizeToE164(String rawNumber) {
 
@@ -131,13 +164,11 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
         String digits = rawNumber.replaceAll("[^0-9]", "");
 
         // Already correct: 91 + 10 digit Indian number = 12 digits
-        // e.g. 919876543210 or +919876543210
         if (digits.length() == 12 && digits.startsWith("91")) {
             return digits;
         }
 
         // Clean 10-digit Indian mobile number — just prefix 91
-        // e.g. 9876543210
         if (digits.length() == 10) {
             return "91" + digits;
         }
@@ -148,29 +179,33 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
         }
 
         // 13 digits with 0091 prefix (e.g. 00919876543210) — strip 00, keep rest
-        // Result: 919876543210 (12 digits correct)
         if (digits.length() == 13 && digits.startsWith("0091")) {
             return digits.substring(2);
         }
 
-        // 13 digits starting with 910 — edge case where someone stored
-        // country code + leading 0 (e.g. 910 9876543210)
+        // 13 digits starting with 910 — country code + leading 0 edge case
         if (digits.length() == 13 && digits.startsWith("910")) {
             return "91" + digits.substring(3);
         }
 
-        // Unrecognized format — return null so caller can skip and log properly
-        // rather than sending garbage to Meta
+        // Unrecognized format — return null so caller handles it cleanly
         log.warn("Cannot normalize WhatsApp number to E164: '{}' → " +
-                        "digits='{}' length={} — this dealer will be skipped",
+                        "digits='{}' length={}",
                 rawNumber, digits, digits.length());
         return null;
     }
 
-
+    /**
+     * Persists the audit log in its OWN independent transaction.
+     * REQUIRES_NEW guarantees this write commits/rollbacks completely independently
+     * of anything else — nothing here can ever roll back the lead.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void persistLog(LeadCreatedEvent event, WhatsappMessageStatus status, String messageId,
-                           String requestPayload, String responsePayload) {
+    public void persistLog(LeadCreatedEvent event,
+                           WhatsappMessageStatus status,
+                           String messageId,
+                           String requestPayload,
+                           String responsePayload) {
         try {
             WhatsappMessageLog logEntry = WhatsappMessageLog.builder()
                     .leadId(event.leadId())
@@ -185,8 +220,9 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
 
             messageLogRepository.save(logEntry);
         } catch (Exception ex) {
-            // Even logging failures must not propagate - log to application logs as last resort
-            log.error("Failed to persist WhatsappMessageLog for leadId [{}]", event.leadId(), ex);
+            // Even logging failures must not propagate
+            log.error("Failed to persist WhatsappMessageLog for leadId [{}]",
+                    event.leadId(), ex);
         }
     }
 }
