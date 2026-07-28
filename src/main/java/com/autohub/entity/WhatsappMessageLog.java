@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.autohub.enums.WhatsappDeliveryStatus;
+
 
 import java.time.LocalDateTime;
 
@@ -51,17 +53,36 @@ public class WhatsappMessageLog {
     @Column(name = "request_payload", columnDefinition = "TEXT")
     private String requestPayload;
 
+    // Add this field inside the entity class
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_status", length = 20)
+    private WhatsappDeliveryStatus deliveryStatus;
+
     @Lob
     @Column(name = "response_payload", columnDefinition = "TEXT")
     private String responsePayload;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+//
+//    @PrePersist
+//    public void prePersist() {
+//        if (createdAt == null) {
+//            createdAt = LocalDateTime.now();
+//        }
+//    }
 
+
+
+    // Add this to @PrePersist — default to ACCEPTED when first saved
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+        // Default delivery status on first save
+        if (deliveryStatus == null) {
+            deliveryStatus = WhatsappDeliveryStatus.ACCEPTED;
         }
     }
 }

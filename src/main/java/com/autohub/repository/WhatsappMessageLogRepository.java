@@ -12,4 +12,6 @@ public interface WhatsappMessageLogRepository extends JpaRepository<WhatsappMess
     List<WhatsappMessageLog> findByLeadId(Long leadId);
 
     List<WhatsappMessageLog> findByDealerIdOrderByCreatedAtDesc(Long dealerId);
+
+    List<WhatsappMessageLog> findByWhatsappMessageId(String whatsappMessageId);
 }

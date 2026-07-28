@@ -23,4 +23,6 @@ public interface WhatsappOfferMessageLogRepository
 
     // Count success/fail for an offer
     long countByOfferIdAndStatus(Long offerId, WhatsappMessageStatus status);
+
+    List<WhatsappOfferMessageLog> findByWhatsappMessageId(String whatsappMessageId);
 }

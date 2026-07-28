@@ -26,4 +26,6 @@ public interface WhatsappVehicleShareLogRepository
     // All successful shares for a vehicle
     List<WhatsappVehicleShareLog> findByVehicleIdAndStatus(
             Long vehicleId, WhatsappMessageStatus status);
+
+    List<WhatsappVehicleShareLog> findByWhatsappMessageId(String whatsappMessageId);
 }

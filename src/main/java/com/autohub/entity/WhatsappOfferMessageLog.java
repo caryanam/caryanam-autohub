@@ -3,6 +3,7 @@ package com.autohub.entity;
 import com.autohub.enums.WhatsappMessageStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import com.autohub.enums.WhatsappDeliveryStatus;
 
 import java.time.LocalDateTime;
 
@@ -64,10 +65,20 @@ public class WhatsappOfferMessageLog {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Add this field inside the entity class
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_status", length = 20)
+    private WhatsappDeliveryStatus deliveryStatus;
+
+    // Add this to @PrePersist — default to ACCEPTED when first saved
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+        // Default delivery status on first save
+        if (deliveryStatus == null) {
+            deliveryStatus = WhatsappDeliveryStatus.ACCEPTED;
         }
     }
 }

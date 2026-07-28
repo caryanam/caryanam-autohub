@@ -72,6 +72,9 @@ public class SecurityConfig {
                                         "/v3/api-docs/**"
                                 ).permitAll()
 
+                                .requestMatchers("/api/webhook/whatsapp").permitAll()
+                                .requestMatchers("/api/webhook/whatsapp/**").permitAll()
+
                                 .requestMatchers(
                                         "/uploads/**","/api/olx/**")
                                 .permitAll()
