@@ -68,10 +68,16 @@ public class WhatsappVehicleShareLog {
     @Column(name = "shared_at", nullable = false, updatable = false)
     private LocalDateTime sharedAt;
 
-    // Add this field inside the entity class
+    // New fields — add inside the class body
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_status", length = 20)
     private WhatsappDeliveryStatus deliveryStatus;
+
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
+    @Column(name = "last_retry_at")
+    private LocalDateTime lastRetryAt;
 
     @PrePersist
     public void prePersist() {
@@ -79,9 +85,11 @@ public class WhatsappVehicleShareLog {
             sharedAt = LocalDateTime.now();
         }
 
-        // Default delivery status on first save
         if (deliveryStatus == null) {
             deliveryStatus = WhatsappDeliveryStatus.ACCEPTED;
+        }
+        if (retryCount < 0) {
+            retryCount = 0;
         }
     }
 

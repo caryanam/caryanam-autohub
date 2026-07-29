@@ -3,6 +3,7 @@ package com.autohub.repository;
 import com.autohub.entity.WhatsappVehicleShareLog;
 import com.autohub.enums.WhatsappMessageStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -27,5 +28,10 @@ public interface WhatsappVehicleShareLogRepository
     List<WhatsappVehicleShareLog> findByVehicleIdAndStatus(
             Long vehicleId, WhatsappMessageStatus status);
 
+    // For webhook update
     List<WhatsappVehicleShareLog> findByWhatsappMessageId(String whatsappMessageId);
+
+    // For failed messages list
+    @Query("SELECT l FROM WhatsappVehicleShareLog l WHERE l.status = 'FAILED' OR l.deliveryStatus = 'FAILED' ORDER BY l.sharedAt DESC")
+    List<WhatsappVehicleShareLog> findAllFailed();
 }

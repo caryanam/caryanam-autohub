@@ -53,10 +53,17 @@ public class WhatsappMessageLog {
     @Column(name = "request_payload", columnDefinition = "TEXT")
     private String requestPayload;
 
-    // Add this field inside the entity class
+    // New fields — add inside the class body
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_status", length = 20)
     private WhatsappDeliveryStatus deliveryStatus;
+
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
+    @Column(name = "last_retry_at")
+    private LocalDateTime lastRetryAt;
+
 
     @Lob
     @Column(name = "response_payload", columnDefinition = "TEXT")
@@ -74,15 +81,17 @@ public class WhatsappMessageLog {
 
 
 
-    // Add this to @PrePersist — default to ACCEPTED when first saved
+    // Update @PrePersist to set default deliveryStatus
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        // Default delivery status on first save
         if (deliveryStatus == null) {
             deliveryStatus = WhatsappDeliveryStatus.ACCEPTED;
+        }
+        if (retryCount < 0) {
+            retryCount = 0;
         }
     }
 }

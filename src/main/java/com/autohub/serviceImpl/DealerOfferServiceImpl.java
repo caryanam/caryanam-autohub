@@ -196,17 +196,20 @@ public class DealerOfferServiceImpl implements DealerOfferService {
                                     .build())
                             .toList();
 
-                    return DealerOfferResponseDTO.builder()
-                            .offerId(offer.getId())
-                            .offerTitle(offer.getOfferTitle())
-                            .dealerGreetingName(offer.getDealerGreetingName())
-                            .offerDetails(offer.getOfferDetails())
-                            .benefits(offer.getBenefits())
-                            .contactInfo(offer.getContactInfo())
-                            .imageUrl(buildMediaUrl(offer.getImageUrl()))
-                            .totalDealersTargeted(offer.getTotalDealersTargeted())
-                            .totalSentSuccess(offer.getTotalSentSuccess())
-                            .totalSentFailed(offer.getTotalSentFailed())
+                            long successCount = logs.stream().filter(l -> l.getStatus() == com.autohub.enums.WhatsappMessageStatus.SUCCESS).count();
+                            long failCount = logs.stream().filter(l -> l.getStatus() == com.autohub.enums.WhatsappMessageStatus.FAILED).count();
+
+                            return DealerOfferResponseDTO.builder()
+                                    .offerId(offer.getId())
+                                    .offerTitle(offer.getOfferTitle())
+                                    .dealerGreetingName(offer.getDealerGreetingName())
+                                    .offerDetails(offer.getOfferDetails())
+                                    .benefits(offer.getBenefits())
+                                    .contactInfo(offer.getContactInfo())
+                                    .imageUrl(buildMediaUrl(offer.getImageUrl()))
+                                    .totalDealersTargeted(offer.getTotalDealersTargeted())
+                                    .totalSentSuccess((int) successCount)
+                                    .totalSentFailed((int) failCount)
                             .createdAt(offer.getCreatedAt())
                             .dealerLogs(dealerLogs)
                             .build();
@@ -237,6 +240,9 @@ public class DealerOfferServiceImpl implements DealerOfferService {
                         .build())
                 .toList();
 
+        long successCount = logs.stream().filter(l -> l.getStatus() == com.autohub.enums.WhatsappMessageStatus.SUCCESS).count();
+        long failCount = logs.stream().filter(l -> l.getStatus() == com.autohub.enums.WhatsappMessageStatus.FAILED).count();
+
         return DealerOfferResponseDTO.builder()
                 .offerId(offer.getId())
                 .offerTitle(offer.getOfferTitle())
@@ -246,8 +252,8 @@ public class DealerOfferServiceImpl implements DealerOfferService {
                 .contactInfo(offer.getContactInfo())
                 .imageUrl(buildMediaUrl(offer.getImageUrl()))
                 .totalDealersTargeted(offer.getTotalDealersTargeted())
-                .totalSentSuccess(offer.getTotalSentSuccess())
-                .totalSentFailed(offer.getTotalSentFailed())
+                .totalSentSuccess((int) successCount)
+                .totalSentFailed((int) failCount)
                 .createdAt(offer.getCreatedAt())
                 .dealerLogs(dealerLogs)
                 .build();

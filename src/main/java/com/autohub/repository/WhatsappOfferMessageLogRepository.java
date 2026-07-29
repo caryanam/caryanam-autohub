@@ -3,6 +3,7 @@ package com.autohub.repository;
 import com.autohub.entity.WhatsappOfferMessageLog;
 import com.autohub.enums.WhatsappMessageStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,5 +25,10 @@ public interface WhatsappOfferMessageLogRepository
     // Count success/fail for an offer
     long countByOfferIdAndStatus(Long offerId, WhatsappMessageStatus status);
 
+    // For webhook update
     List<WhatsappOfferMessageLog> findByWhatsappMessageId(String whatsappMessageId);
+
+    // For failed messages list
+    @Query("SELECT l FROM WhatsappOfferMessageLog l WHERE l.status = 'FAILED' OR l.deliveryStatus = 'FAILED' ORDER BY l.createdAt DESC")
+    List<WhatsappOfferMessageLog> findAllFailed();
 }
