@@ -186,12 +186,18 @@ public class WhatsAppVehicleClient {
 
     private String escapeJson(String value) {
         if (value == null) return "";
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+        
+        // 1. Replace newlines, tabs, and carriage returns with a single space
+        String cleaned = value.replaceAll("[\r\n\t]", " ");
+        
+        // 2. Replace multiple consecutive spaces (2 or more) with a single space
+        cleaned = cleaned.replaceAll("\\s{2,}", " ");
+        
+        // 3. Trim leading/trailing spaces
+        cleaned = cleaned.trim();
+        
+        // 4. Escape JSON special characters
+        return cleaned.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     public record VehicleShareResult(

@@ -171,12 +171,21 @@ public class WhatsAppOfferClient {
     }
 
     // Escapes special characters that would break JSON string values
+    // AND enforces Meta's strict template parameter rules (no newlines, tabs, or >= 4 consecutive spaces)
     private String escapeJson(String value) {
         if (value == null) return "";
-        return value.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
+        
+        // 1. Replace newlines, tabs, and carriage returns with a single space
+        String cleaned = value.replaceAll("[\r\n\t]", " ");
+        
+        // 2. Replace multiple consecutive spaces (2 or more) with a single space
+        cleaned = cleaned.replaceAll("\\s{2,}", " ");
+        
+        // 3. Trim leading/trailing spaces
+        cleaned = cleaned.trim();
+        
+        // 4. Escape JSON special characters
+        return cleaned.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     public record OfferSendResult(
