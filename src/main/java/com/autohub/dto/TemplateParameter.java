@@ -20,11 +20,13 @@ public record TemplateParameter(
 
     private static String cleanMetaParam(String value) {
         if (value == null) return "";
-        // 1. Replace newlines, tabs, and carriage returns with a single space
-        String cleaned = value.replaceAll("[\r\n\t]", " ");
-        // 2. Replace multiple consecutive spaces (2 or more) with a single space
-        cleaned = cleaned.replaceAll("\\s{2,}", " ");
-        // 3. Trim leading/trailing spaces
+        // 1. Aggressively replace all whitespaces (including \r, \n, \t, and unicode spaces) with a single space
+        String cleaned = value.replaceAll("[\\s\\p{Zs}]+", " ");
+        // 2. Also replace literal string versions if they were saved as raw backslash-n strings in the DB
+        cleaned = cleaned.replace("\\r", " ").replace("\\n", " ").replace("\\t", " ");
+        // 3. Collapse any multiple spaces that might have formed from step 2
+        cleaned = cleaned.replaceAll(" +", " ");
+        // 4. Trim leading/trailing spaces
         return cleaned.trim();
     }
 }
