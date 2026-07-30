@@ -13,6 +13,7 @@ public interface WhatsappDashboardService {
     WhatsappDashboardStatsDTO.TemplateStats getLeadNotificationStats();
     WhatsappDashboardStatsDTO.TemplateStats getOfferBroadcastStats();
     WhatsappDashboardStatsDTO.TemplateStats getVehicleShareStats();
+    WhatsappDashboardStatsDTO.TemplateStats getBirthdayStats();
 
     // All failed messages across all templates
     List<WhatsappDashboardStatsDTO.FailedMessageDTO> getAllFailedMessages();
@@ -24,4 +25,5 @@ public interface WhatsappDashboardService {
     List<com.autohub.entity.WhatsappMessageLog> getLeadLogs();
     List<com.autohub.entity.WhatsappOfferMessageLog> getOfferLogs();
     List<com.autohub.entity.WhatsappVehicleShareLog> getVehicleLogs();
+    List<com.autohub.entity.WhatsappBirthdayMessageLog> getBirthdayLogs();
 }

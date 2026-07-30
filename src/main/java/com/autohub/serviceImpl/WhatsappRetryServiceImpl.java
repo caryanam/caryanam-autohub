@@ -3,6 +3,7 @@ package com.autohub.serviceImpl;
 import com.autohub.configuration.WhatsAppClient;
 import com.autohub.configuration.WhatsAppOfferClient;
 import com.autohub.configuration.WhatsAppVehicleClient;
+import com.autohub.configuration.WhatsAppBirthdayClient;
 import com.autohub.dto.WhatsAppProperties;
 import com.autohub.dto.WhatsAppTemplateRequest;
 import com.autohub.dto.WhatsappDashboardStatsDTO;
@@ -32,9 +33,11 @@ public class WhatsappRetryServiceImpl implements WhatsappRetryService {
     private final WhatsappMessageLogRepository messageLogRepository;
     private final WhatsappOfferMessageLogRepository offerMessageLogRepository;
     private final WhatsappVehicleShareLogRepository vehicleShareLogRepository;
+    private final WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository;
     private final WhatsAppClient whatsAppClient;
     private final WhatsAppOfferClient offerClient;
     private final WhatsAppVehicleClient vehicleClient;
+    private final WhatsAppBirthdayClient birthdayClient;
     private final DealerOfferRepository dealerOfferRepository;
     private final VehicleRepository vehicleRepository;
     private final VehicleMediaRepository mediaRepository;
@@ -44,9 +47,11 @@ public class WhatsappRetryServiceImpl implements WhatsappRetryService {
             WhatsappMessageLogRepository messageLogRepository,
             WhatsappOfferMessageLogRepository offerMessageLogRepository,
             WhatsappVehicleShareLogRepository vehicleShareLogRepository,
+            WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository,
             WhatsAppClient whatsAppClient,
             WhatsAppOfferClient offerClient,
             WhatsAppVehicleClient vehicleClient,
+            WhatsAppBirthdayClient birthdayClient,
             DealerOfferRepository dealerOfferRepository,
             VehicleRepository vehicleRepository,
             VehicleMediaRepository mediaRepository,
@@ -54,9 +59,11 @@ public class WhatsappRetryServiceImpl implements WhatsappRetryService {
         this.messageLogRepository = messageLogRepository;
         this.offerMessageLogRepository = offerMessageLogRepository;
         this.vehicleShareLogRepository = vehicleShareLogRepository;
+        this.birthdayMessageLogRepository = birthdayMessageLogRepository;
         this.whatsAppClient = whatsAppClient;
         this.offerClient = offerClient;
         this.vehicleClient = vehicleClient;
+        this.birthdayClient = birthdayClient;
         this.dealerOfferRepository = dealerOfferRepository;
         this.vehicleRepository = vehicleRepository;
         this.mediaRepository = mediaRepository;
@@ -71,11 +78,12 @@ public class WhatsappRetryServiceImpl implements WhatsappRetryService {
         log.info("Retry requested → logType=[{}] logId=[{}]", logType, logId);
 
         return switch (logType.toUpperCase()) {
-            case "LEAD"    -> retryLeadMessage(logId);
-            case "OFFER"   -> retryOfferMessage(logId);
-            case "VEHICLE" -> retryVehicleMessage(logId);
+            case "LEAD"     -> retryLeadMessage(logId);
+            case "OFFER"    -> retryOfferMessage(logId);
+            case "VEHICLE"  -> retryVehicleMessage(logId);
+            case "BIRTHDAY" -> retryBirthdayMessage(logId);
             default -> throw new IllegalArgumentException(
-                    "Unknown logType: '" + logType + "'. Must be LEAD, OFFER, or VEHICLE");
+                    "Unknown logType: '" + logType + "'. Must be LEAD, OFFER, VEHICLE, or BIRTHDAY");
         };
     }
 
@@ -281,6 +289,52 @@ public class WhatsappRetryServiceImpl implements WhatsappRetryService {
             vehicleShareLogRepository.save(vehicleLog);
             return buildRetryResult(logId, "VEHICLE", false, null,
                     vehicleLog.getRetryCount(), "Retry error: " + ex.getMessage());
+        }
+    }
+
+    // ──────────────────────────────────────────────────
+    // BIRTHDAY retry
+    // ──────────────────────────────────────────────────
+
+    private WhatsappDashboardStatsDTO.RetryResultDTO retryBirthdayMessage(Long logId) {
+
+        WhatsappBirthdayMessageLog birthdayLog = birthdayMessageLogRepository.findById(logId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Birthday log not found: " + logId));
+
+        validateRetryEligible(birthdayLog.getRetryCount(), logId, "BIRTHDAY");
+
+        birthdayLog.setRetryCount(birthdayLog.getRetryCount() + 1);
+        birthdayLog.setLastRetryAt(LocalDateTime.now());
+
+        try {
+            WhatsAppBirthdayClient.BirthdaySendResult result =
+                    birthdayClient.sendBirthdayWish(
+                            birthdayLog.getMobileNumber(),
+                            birthdayLog.getDealerName()
+                    );
+
+            if (result.success()) {
+                birthdayLog.setStatus(WhatsappMessageStatus.SUCCESS);
+                birthdayLog.setDeliveryStatus(WhatsappDeliveryStatus.ACCEPTED);
+                birthdayLog.setWhatsappMessageId(result.whatsappMessageId());
+                birthdayLog.setResponsePayload(result.responsePayload());
+                birthdayMessageLogRepository.save(birthdayLog);
+
+                return buildRetryResult(logId, "BIRTHDAY", true,
+                        result.whatsappMessageId(), birthdayLog.getRetryCount(),
+                        "Retry successful — birthday wish resent");
+            } else {
+                birthdayLog.setStatus(WhatsappMessageStatus.FAILED);
+                birthdayMessageLogRepository.save(birthdayLog);
+                return buildRetryResult(logId, "BIRTHDAY", false, null,
+                        birthdayLog.getRetryCount(), "Retry failed: " + result.errorMessage());
+            }
+        } catch (Exception ex) {
+            birthdayLog.setStatus(WhatsappMessageStatus.FAILED);
+            birthdayMessageLogRepository.save(birthdayLog);
+            return buildRetryResult(logId, "BIRTHDAY", false, null,
+                    birthdayLog.getRetryCount(), "Retry error: " + ex.getMessage());
         }
     }
 

@@ -90,6 +90,18 @@ public class WhatsappDashboardController {
     }
 
     /**
+     * GET /api/admin/whatsapp/birthdays/stats
+     *
+     * Stats for dealer_birthday_wish template only.
+     * Frontend usage: Birthday wishes stats
+     */
+    @GetMapping("/birthdays/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<WhatsappDashboardStatsDTO.TemplateStats> getBirthdayStats() {
+        return ResponseEntity.ok(dashboardService.getBirthdayStats());
+    }
+
+    /**
      * GET /api/admin/whatsapp/failed-messages
      *
      * All failed messages across ALL three templates, sorted newest first.
@@ -136,6 +148,16 @@ public class WhatsappDashboardController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<com.autohub.entity.WhatsappVehicleShareLog>> getVehicleLogs() {
         return ResponseEntity.ok(dashboardService.getVehicleLogs());
+    }
+
+    /**
+     * GET /api/admin/whatsapp/logs/birthdays
+     * Returns all birthday logs (sorted newest first)
+     */
+    @GetMapping("/logs/birthdays")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.autohub.entity.WhatsappBirthdayMessageLog>> getBirthdayLogs() {
+        return ResponseEntity.ok(dashboardService.getBirthdayLogs());
     }
 
     /**

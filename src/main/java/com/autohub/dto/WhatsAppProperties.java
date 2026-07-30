@@ -41,7 +41,14 @@ public record WhatsAppProperties(
         String offerTemplateName,
 
         @NotBlank(message = "whatsapp.offer-language-code must be configured")
-        String offerLanguageCode
+        String offerLanguageCode,
+
+        // ── NEW fields for dealer birthday template ──
+        @NotBlank(message = "whatsapp.birthday-template-name must be configured")
+        String birthdayTemplateName,
+
+        @NotBlank(message = "whatsapp.birthday-language-code must be configured")
+        String birthdayLanguageCode
 
 ) {
     public String messagesEndpoint() {

@@ -26,6 +26,7 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
     private final WhatsappMessageLogRepository messageLogRepository;
     private final WhatsappOfferMessageLogRepository offerMessageLogRepository;
     private final WhatsappVehicleShareLogRepository vehicleShareLogRepository;
+    private final com.autohub.repository.WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository;
     private final DealerOfferRepository dealerOfferRepository;
     private final WhatsAppProperties properties;
 
@@ -33,11 +34,13 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
             WhatsappMessageLogRepository messageLogRepository,
             WhatsappOfferMessageLogRepository offerMessageLogRepository,
             WhatsappVehicleShareLogRepository vehicleShareLogRepository,
+            com.autohub.repository.WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository,
             DealerOfferRepository dealerOfferRepository,
             WhatsAppProperties properties) {
         this.messageLogRepository = messageLogRepository;
         this.offerMessageLogRepository = offerMessageLogRepository;
         this.vehicleShareLogRepository = vehicleShareLogRepository;
+        this.birthdayMessageLogRepository = birthdayMessageLogRepository;
         this.dealerOfferRepository = dealerOfferRepository;
         this.properties = properties;
     }
@@ -49,13 +52,14 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
         WhatsappDashboardStatsDTO.TemplateStats leads   = getLeadNotificationStats();
         WhatsappDashboardStatsDTO.TemplateStats offers  = getOfferBroadcastStats();
         WhatsappDashboardStatsDTO.TemplateStats vehicles = getVehicleShareStats();
+        WhatsappDashboardStatsDTO.TemplateStats birthdays = getBirthdayStats();
 
-        long totalSent      = leads.getTotalSent() + offers.getTotalSent() + vehicles.getTotalSent();
-        long totalDelivered = leads.getDelivered() + offers.getDelivered() + vehicles.getDelivered();
-        long totalRead      = leads.getRead() + offers.getRead() + vehicles.getRead();
-        long totalFailed    = leads.getFailed() + offers.getFailed() + vehicles.getFailed();
-        long totalAccepted  = leads.getAccepted() + offers.getAccepted() + vehicles.getAccepted();
-        long totalSentState = leads.getSent() + offers.getSent() + vehicles.getSent();
+        long totalSent      = leads.getTotalSent() + offers.getTotalSent() + vehicles.getTotalSent() + birthdays.getTotalSent();
+        long totalDelivered = leads.getDelivered() + offers.getDelivered() + vehicles.getDelivered() + birthdays.getDelivered();
+        long totalRead      = leads.getRead() + offers.getRead() + vehicles.getRead() + birthdays.getRead();
+        long totalFailed    = leads.getFailed() + offers.getFailed() + vehicles.getFailed() + birthdays.getFailed();
+        long totalAccepted  = leads.getAccepted() + offers.getAccepted() + vehicles.getAccepted() + birthdays.getAccepted();
+        long totalSentState = leads.getSent() + offers.getSent() + vehicles.getSent() + birthdays.getSent();
 
         double deliveryRate = totalSent > 0
                 ? Math.round((double) totalDelivered / totalSent * 1000.0) / 10.0
@@ -202,6 +206,45 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
 
     @Override
     @Transactional(readOnly = true)
+    public WhatsappDashboardStatsDTO.TemplateStats getBirthdayStats() {
+        List<com.autohub.entity.WhatsappBirthdayMessageLog> all = birthdayMessageLogRepository.findAll();
+
+        long total     = all.size();
+        long accepted  = all.stream().filter(l -> l.getDeliveryStatus() == WhatsappDeliveryStatus.ACCEPTED).count();
+        long sent      = all.stream().filter(l -> l.getDeliveryStatus() == WhatsappDeliveryStatus.SENT).count();
+        long delivered = all.stream().filter(l -> l.getDeliveryStatus() == WhatsappDeliveryStatus.DELIVERED).count();
+        long read      = all.stream().filter(l -> l.getDeliveryStatus() == WhatsappDeliveryStatus.READ).count();
+        long failed    = all.stream().filter(l ->
+                l.getStatus() == WhatsappMessageStatus.FAILED ||
+                        l.getDeliveryStatus() == WhatsappDeliveryStatus.FAILED).count();
+        long inQueue   = all.stream().filter(l ->
+                l.getStatus() == WhatsappMessageStatus.SUCCESS &&
+                        l.getDeliveryStatus() == WhatsappDeliveryStatus.ACCEPTED).count();
+
+        double deliveryRate = total > 0
+                ? Math.round((double) delivered / total * 1000.0) / 10.0 : 0.0;
+        double readRate = delivered > 0
+                ? Math.round((double) read / delivered * 1000.0) / 10.0 : 0.0;
+
+        return WhatsappDashboardStatsDTO.TemplateStats.builder()
+                .templateType("BIRTHDAY")
+                .templateName(properties.birthdayTemplateName())
+                .totalSent(total)
+                .accepted(accepted)
+                .sent(sent)
+                .delivered(delivered)
+                .read(read)
+                .failed(failed)
+                .inQueue(inQueue)
+                .deliveryRate(deliveryRate)
+                .readRate(readRate)
+                .lastSentAt(all.isEmpty() ? null :
+                        all.get(all.size() - 1).getCreatedAt())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<WhatsappDashboardStatsDTO.FailedMessageDTO> getAllFailedMessages() {
 
         List<WhatsappDashboardStatsDTO.FailedMessageDTO> result = new ArrayList<>();
@@ -264,6 +307,27 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
                         .responsePayload(log.getResponsePayload())
                         .retryCount(log.getRetryCount())
                         .createdAt(log.getSharedAt())
+                        .lastRetryAt(log.getLastRetryAt())
+                        .canRetry(log.getRetryCount() < 3)
+                        .build())
+        );
+
+        // 4. Failed birthday wishes
+        birthdayMessageLogRepository.findAllFailed().forEach(log ->
+                result.add(WhatsappDashboardStatsDTO.FailedMessageDTO.builder()
+                        .logId(log.getId())
+                        .logType("BIRTHDAY")
+                        .referenceId(log.getDealerId())
+                        .dealerId(log.getDealerId())
+                        .dealerName(log.getDealerName())
+                        .mobileNumber(log.getMobileNumber())
+                        .templateName(log.getTemplateName())
+                        .apiStatus(log.getStatus().name())
+                        .deliveryStatus(log.getDeliveryStatus().name())
+                        .errorMessage(log.getErrorMessage())
+                        .responsePayload(log.getResponsePayload())
+                        .retryCount(log.getRetryCount())
+                        .createdAt(log.getCreatedAt())
                         .lastRetryAt(log.getLastRetryAt())
                         .canRetry(log.getRetryCount() < 3)
                         .build())
@@ -364,6 +428,18 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
                     if (a.getSharedAt() == null) return 1;
                     if (b.getSharedAt() == null) return -1;
                     return b.getSharedAt().compareTo(a.getSharedAt());
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.autohub.entity.WhatsappBirthdayMessageLog> getBirthdayLogs() {
+        return birthdayMessageLogRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
                 })
                 .toList();
     }

@@ -4,6 +4,7 @@ import com.autohub.enums.WhatsappDeliveryStatus;
 import com.autohub.repository.WhatsappMessageLogRepository;
 import com.autohub.repository.WhatsappOfferMessageLogRepository;
 import com.autohub.repository.WhatsappVehicleShareLogRepository;
+import com.autohub.repository.WhatsappBirthdayMessageLogRepository;
 import com.autohub.service.WhatsAppWebhookService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -28,14 +29,17 @@ public class WhatsAppWebhookServiceImpl implements WhatsAppWebhookService {
     private final WhatsappMessageLogRepository messageLogRepository;
     private final WhatsappOfferMessageLogRepository offerMessageLogRepository;
     private final WhatsappVehicleShareLogRepository vehicleShareLogRepository;
+    private final WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository;
 
     public WhatsAppWebhookServiceImpl(
             WhatsappMessageLogRepository messageLogRepository,
             WhatsappOfferMessageLogRepository offerMessageLogRepository,
-            WhatsappVehicleShareLogRepository vehicleShareLogRepository) {
+            WhatsappVehicleShareLogRepository vehicleShareLogRepository,
+            WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository) {
         this.messageLogRepository = messageLogRepository;
         this.offerMessageLogRepository = offerMessageLogRepository;
         this.vehicleShareLogRepository = vehicleShareLogRepository;
+        this.birthdayMessageLogRepository = birthdayMessageLogRepository;
     }
 
     /**
@@ -227,6 +231,27 @@ public class WhatsAppWebhookServiceImpl implements WhatsAppWebhookService {
             vehicleShareLogRepository.saveAll(vehicleLogs);
             log.info("Updated {} vehicle share log(s) for wamid=[{}] → status=[{}]",
                     vehicleLogs.size(), wamid, deliveryStatus);
+            updated = true;
+        }
+
+        // 4. Birthday wish log
+        var birthdayLogs = birthdayMessageLogRepository.findByWhatsappMessageId(wamid);
+        if (birthdayLogs != null && !birthdayLogs.isEmpty()) {
+            birthdayLogs.forEach(logEntry -> {
+                logEntry.setDeliveryStatus(deliveryStatus);
+                if (deliveryStatus == WhatsappDeliveryStatus.FAILED) {
+                    logEntry.setStatus(com.autohub.enums.WhatsappMessageStatus.FAILED);
+                }
+                String webhookMsg = " | WEBHOOK_" + deliveryStatus.name() + ": " + statusNode.toString();
+                logEntry.setResponsePayload(logEntry.getResponsePayload() != null ? logEntry.getResponsePayload() + webhookMsg : webhookMsg);
+                
+                if (finalErrorDetails != null) {
+                    logEntry.setErrorMessage(finalErrorDetails);
+                }
+            });
+            birthdayMessageLogRepository.saveAll(birthdayLogs);
+            log.info("Updated {} birthday log(s) for wamid=[{}] → status=[{}]",
+                    birthdayLogs.size(), wamid, deliveryStatus);
             updated = true;
         }
 

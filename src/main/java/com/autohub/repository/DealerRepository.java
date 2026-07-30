@@ -65,5 +65,15 @@ public interface DealerRepository extends JpaRepository<Dealer, Long> {
 """)
     List<Dealer> findAllActiveDealers();
 
+    @Query("""
+    SELECT d
+    FROM Dealer d
+    WHERE d.dealerAccountStatus = com.autohub.enums.DealerStatus.APPROVED
+      AND d.dateOfBirth IS NOT NULL
+      AND MONTH(d.dateOfBirth) = :month
+      AND DAY(d.dateOfBirth) = :day
+    """)
+    List<Dealer> findApprovedDealersByBirthdayMonthAndDay(@org.springframework.data.repository.query.Param("month") int month, 
+                                                          @org.springframework.data.repository.query.Param("day") int day);
 
 }
