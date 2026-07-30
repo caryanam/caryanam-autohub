@@ -331,4 +331,40 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
                                  WhatsappDeliveryStatus target) {
         return statuses.stream().filter(s -> s == target).count();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WhatsappMessageLog> getLeadLogs() {
+        return messageLogRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WhatsappOfferMessageLog> getOfferLogs() {
+        return offerMessageLogRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WhatsappVehicleShareLog> getVehicleLogs() {
+        return vehicleShareLogRepository.findAll().stream()
+                .sorted((a, b) -> {
+                    if (a.getSharedAt() == null) return 1;
+                    if (b.getSharedAt() == null) return -1;
+                    return b.getSharedAt().compareTo(a.getSharedAt());
+                })
+                .toList();
+    }
 }

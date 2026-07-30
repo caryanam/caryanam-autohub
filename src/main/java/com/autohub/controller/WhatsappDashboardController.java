@@ -109,6 +109,36 @@ public class WhatsappDashboardController {
     }
 
     /**
+     * GET /api/admin/whatsapp/logs/leads
+     * Returns all lead logs (sorted newest first)
+     */
+    @GetMapping("/logs/leads")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.autohub.entity.WhatsappMessageLog>> getLeadLogs() {
+        return ResponseEntity.ok(dashboardService.getLeadLogs());
+    }
+
+    /**
+     * GET /api/admin/whatsapp/logs/offers
+     * Returns all offer logs (sorted newest first)
+     */
+    @GetMapping("/logs/offers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.autohub.entity.WhatsappOfferMessageLog>> getOfferLogs() {
+        return ResponseEntity.ok(dashboardService.getOfferLogs());
+    }
+
+    /**
+     * GET /api/admin/whatsapp/logs/vehicles
+     * Returns all vehicle logs (sorted newest first)
+     */
+    @GetMapping("/logs/vehicles")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.autohub.entity.WhatsappVehicleShareLog>> getVehicleLogs() {
+        return ResponseEntity.ok(dashboardService.getVehicleLogs());
+    }
+
+    /**
      * GET /api/admin/whatsapp/offers/{offerId}/delivery-summary
      *
      * Full per-dealer delivery breakdown for a specific offer broadcast.

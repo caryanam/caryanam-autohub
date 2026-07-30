@@ -19,4 +19,9 @@ public interface WhatsappDashboardService {
 
     // Offer-specific delivery breakdown
     WhatsappDashboardStatsDTO.OfferDeliverySummaryDTO getOfferDeliverySummary(Long offerId);
+
+    // Raw logs for frontend tables
+    List<com.autohub.entity.WhatsappMessageLog> getLeadLogs();
+    List<com.autohub.entity.WhatsappOfferMessageLog> getOfferLogs();
+    List<com.autohub.entity.WhatsappVehicleShareLog> getVehicleLogs();
 }
