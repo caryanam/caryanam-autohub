@@ -144,14 +144,14 @@ public class WhatsAppVehicleClient {
                     properties.vehicleTemplateName(),
                     properties.vehicleLanguageCode(),
                     mediaId,
-                    escapeJson(vehicleName),
-                    escapeJson(price),
-                    escapeJson(registrationYear),
-                    escapeJson(fuelType),
-                    escapeJson(kmDriven),
-                    escapeJson(location),
-                    escapeJson(specifications),
-                    escapeJson(description)
+                    escapeJson(truncate(vehicleName, 100)),
+                    escapeJson(truncate(price, 20)),
+                    escapeJson(truncate(registrationYear, 10)),
+                    escapeJson(truncate(fuelType, 20)),
+                    escapeJson(truncate(kmDriven, 20)),
+                    escapeJson(truncate(location, 50)),
+                    escapeJson(truncate(specifications, 300)),
+                    escapeJson(truncate(description, 300))
             );
 
             String response = whatsAppWebClient.post()
@@ -201,6 +201,19 @@ public class WhatsAppVehicleClient {
         
         // 5. Escape JSON special characters
         return cleaned.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /**
+     * Helper to safely truncate strings to avoid exceeding Meta's 1024 char limit
+     */
+    private String truncate(String text, int maxLength) {
+        if (text == null) {
+            return "N/A";
+        }
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength - 3) + "...";
     }
 
     public record VehicleShareResult(

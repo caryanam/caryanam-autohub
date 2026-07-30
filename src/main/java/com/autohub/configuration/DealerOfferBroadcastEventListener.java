@@ -138,6 +138,11 @@ public class DealerOfferBroadcastEventListener {
                     dealer.getWhatsapp(), normalizedNumber);
 
             try {
+                // Truncate fields to avoid Meta 1024 character template limit (Error 132005)
+                String safeOfferDetails = truncate(event.offerDetails(), 350);
+                String safeBenefits = truncate(event.benefits(), 350);
+                String safeContactInfo = truncate(event.contactInfo(), 150);
+
                 // ── Send to this dealer ──
                 WhatsAppOfferClient.OfferSendResult result =
                         whatsAppOfferClient.sendOfferTemplate(
@@ -146,9 +151,9 @@ public class DealerOfferBroadcastEventListener {
                                 properties.offerLanguageCode(),
                                 event.metaImageHandle(),
                                 dealer.getOwnerName(),   // {{1}}
-                                event.offerDetails(),    // {{2}}
-                                event.benefits(),        // {{3}}
-                                event.contactInfo()      // {{4}}
+                                safeOfferDetails,        // {{2}}
+                                safeBenefits,            // {{3}}
+                                safeContactInfo          // {{4}}
                         );
 
                 if (result.success()) {
@@ -343,5 +348,18 @@ public class DealerOfferBroadcastEventListener {
                         "digits='{}' length={} — this dealer will be skipped",
                 rawNumber, digits, digits.length());
         return null;
+    }
+
+    /**
+     * Helper to safely truncate strings to avoid exceeding Meta's 1024 char limit
+     */
+    private String truncate(String text, int maxLength) {
+        if (text == null) {
+            return "N/A";
+        }
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength - 3) + "...";
     }
 }

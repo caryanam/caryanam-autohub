@@ -118,4 +118,28 @@ public class WhatsAppWebhookController {
         info.put("timestamp", LocalDateTime.now().toString());
         return ResponseEntity.ok(info);
     }
+
+    /**
+     * TEMPORARY DEBUG ENDPOINT to inspect why messages are failing delivery
+     * and if they are being double-inserted.
+     */
+    @GetMapping("/debug-logs")
+    public ResponseEntity<Map<String, Object>> getDebugLogs(
+            @org.springframework.beans.factory.annotation.Autowired com.autohub.repository.WhatsappVehicleShareLogRepository vehicleRepo,
+            @org.springframework.beans.factory.annotation.Autowired com.autohub.repository.WhatsappMessageLogRepository leadRepo,
+            @org.springframework.beans.factory.annotation.Autowired com.autohub.repository.WhatsappOfferMessageLogRepository offerRepo) {
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("recent_vehicle_shares", vehicleRepo.findAll().stream()
+                .sorted((a, b) -> b.getSharedAt().compareTo(a.getSharedAt()))
+                .limit(10).toList());
+        response.put("recent_leads", leadRepo.findAll().stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .limit(10).toList());
+        response.put("recent_offers", offerRepo.findAll().stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .limit(10).toList());
+        
+        return ResponseEntity.ok(response);
+    }
 }

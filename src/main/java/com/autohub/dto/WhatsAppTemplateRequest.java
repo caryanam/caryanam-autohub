@@ -37,9 +37,9 @@ public record WhatsAppTemplateRequest(
             String vehicleName) {
 
         List<TemplateParameter> params = List.of(
-                TemplateParameter.ofText(customerName),
-                TemplateParameter.ofText(customerMobile),
-                TemplateParameter.ofText(vehicleName)
+                TemplateParameter.ofText(truncate(customerName, 100)),
+                TemplateParameter.ofText(truncate(customerMobile, 20)),
+                TemplateParameter.ofText(truncate(vehicleName, 150))
         );
 
         TemplateComponent bodyComponent = TemplateComponent.body(params);
@@ -54,5 +54,18 @@ public record WhatsAppTemplateRequest(
                         List.of(bodyComponent)
                 )
         );
+    }
+
+    /**
+     * Helper to safely truncate strings to avoid exceeding Meta's 1024 char limit
+     */
+    private static String truncate(String text, int maxLength) {
+        if (text == null) {
+            return "N/A";
+        }
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength - 3) + "...";
     }
 }
