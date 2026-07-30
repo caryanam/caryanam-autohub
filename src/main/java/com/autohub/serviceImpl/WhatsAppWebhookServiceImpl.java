@@ -235,23 +235,21 @@ public class WhatsAppWebhookServiceImpl implements WhatsAppWebhookService {
         }
 
         // 4. Birthday wish log
-        var birthdayLogs = birthdayMessageLogRepository.findByWhatsappMessageId(wamid);
-        if (birthdayLogs != null && !birthdayLogs.isEmpty()) {
-            birthdayLogs.forEach(logEntry -> {
-                logEntry.setDeliveryStatus(deliveryStatus);
-                if (deliveryStatus == WhatsappDeliveryStatus.FAILED) {
-                    logEntry.setStatus(com.autohub.enums.WhatsappMessageStatus.FAILED);
-                }
-                String webhookMsg = " | WEBHOOK_" + deliveryStatus.name() + ": " + statusNode.toString();
-                logEntry.setResponsePayload(logEntry.getResponsePayload() != null ? logEntry.getResponsePayload() + webhookMsg : webhookMsg);
-                
-                if (finalErrorDetails != null) {
-                    logEntry.setErrorMessage(finalErrorDetails);
-                }
-            });
-            birthdayMessageLogRepository.saveAll(birthdayLogs);
-            log.info("Updated {} birthday log(s) for wamid=[{}] → status=[{}]",
-                    birthdayLogs.size(), wamid, deliveryStatus);
+        var birthdayLogOpt = birthdayMessageLogRepository.findByWhatsappMessageId(wamid);
+        if (birthdayLogOpt.isPresent()) {
+            var logEntry = birthdayLogOpt.get();
+            logEntry.setDeliveryStatus(deliveryStatus);
+            if (deliveryStatus == WhatsappDeliveryStatus.FAILED) {
+                logEntry.setStatus(com.autohub.enums.WhatsappMessageStatus.FAILED);
+            }
+            String webhookMsg = " | WEBHOOK_" + deliveryStatus.name() + ": " + statusNode.toString();
+            logEntry.setResponsePayload(logEntry.getResponsePayload() != null ? logEntry.getResponsePayload() + webhookMsg : webhookMsg);
+            
+            if (finalErrorDetails != null) {
+                logEntry.setErrorMessage(finalErrorDetails);
+            }
+            birthdayMessageLogRepository.save(logEntry);
+            log.info("Updated 1 birthday log(s) for wamid=[{}] → status=[{}]", wamid, deliveryStatus);
             updated = true;
         }
 

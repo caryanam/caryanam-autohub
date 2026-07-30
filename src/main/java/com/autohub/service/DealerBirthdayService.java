@@ -73,7 +73,6 @@ public class DealerBirthdayService {
                             .dealerName(dealer.getOwnerName())
                             .mobileNumber(toMobile)
                             .templateName(properties.birthdayTemplateName())
-                            .status(WhatsappMessageStatus.PENDING)
                             .build();
 
                     logEntry = birthdayLogRepository.save(logEntry);
