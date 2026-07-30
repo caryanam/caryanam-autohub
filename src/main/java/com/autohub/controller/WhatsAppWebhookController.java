@@ -34,11 +34,20 @@ public class WhatsAppWebhookController {
 
     private final WhatsAppWebhookService webhookService;
     private final ObjectMapper objectMapper;
+    private final com.autohub.repository.WhatsappVehicleShareLogRepository vehicleRepo;
+    private final com.autohub.repository.WhatsappMessageLogRepository leadRepo;
+    private final com.autohub.repository.WhatsappOfferMessageLogRepository offerRepo;
 
     public WhatsAppWebhookController(WhatsAppWebhookService webhookService,
-                                     ObjectMapper objectMapper) {
+                                     ObjectMapper objectMapper,
+                                     com.autohub.repository.WhatsappVehicleShareLogRepository vehicleRepo,
+                                     com.autohub.repository.WhatsappMessageLogRepository leadRepo,
+                                     com.autohub.repository.WhatsappOfferMessageLogRepository offerRepo) {
         this.webhookService = webhookService;
         this.objectMapper = objectMapper;
+        this.vehicleRepo = vehicleRepo;
+        this.leadRepo = leadRepo;
+        this.offerRepo = offerRepo;
     }
 
     /**
@@ -124,10 +133,7 @@ public class WhatsAppWebhookController {
      * and if they are being double-inserted.
      */
     @GetMapping("/debug-logs")
-    public ResponseEntity<Map<String, Object>> getDebugLogs(
-            @org.springframework.beans.factory.annotation.Autowired com.autohub.repository.WhatsappVehicleShareLogRepository vehicleRepo,
-            @org.springframework.beans.factory.annotation.Autowired com.autohub.repository.WhatsappMessageLogRepository leadRepo,
-            @org.springframework.beans.factory.annotation.Autowired com.autohub.repository.WhatsappOfferMessageLogRepository offerRepo) {
+    public ResponseEntity<Map<String, Object>> getDebugLogs() {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("recent_vehicle_shares", vehicleRepo.findAll().stream()
