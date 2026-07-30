@@ -25,6 +25,20 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsService userDetailsService;
 
+    /**
+     * Skip JwtFilter entirely for webhook paths.
+     * Meta's server-to-server webhook calls don't carry an Authorization header.
+     * Without this override, Spring Boot auto-registers this @Component filter
+     * in the servlet filter chain independently of WebhookBypassFilter,
+     * causing it to run on webhook requests even though WebhookBypassFilter
+     * tries to skip it inside the Spring Security chain.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/webhook");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
