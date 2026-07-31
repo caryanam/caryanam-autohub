@@ -1,6 +1,7 @@
 package com.autohub.controller;
 
 import com.autohub.dto.WhatsappDashboardStatsDTO;
+import com.autohub.service.DealerBirthdayService;
 import com.autohub.service.WhatsappDashboardService;
 import com.autohub.service.WhatsappRetryService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +26,15 @@ public class WhatsappDashboardController {
 
     private final WhatsappDashboardService dashboardService;
     private final WhatsappRetryService retryService;
+    private final DealerBirthdayService dealerBirthdayService;
 
     public WhatsappDashboardController(
             WhatsappDashboardService dashboardService,
-            WhatsappRetryService retryService) {
+            WhatsappRetryService retryService,
+            DealerBirthdayService dealerBirthdayService) {
         this.dashboardService = dashboardService;
         this.retryService = retryService;
+        this.dealerBirthdayService = dealerBirthdayService;
     }
 
     /**
@@ -230,5 +234,19 @@ public class WhatsappDashboardController {
                             .message(ex.getMessage())
                             .build());
         }
+    }
+
+    /**
+     * POST /api/admin/whatsapp/birthdays/trigger
+     *
+     * Manually triggers the birthday wishes logic for today.
+     * Useful if the scheduled cron job (7:00 AM) was missed due to server downtime.
+     */
+    @PostMapping("/birthdays/trigger")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> triggerBirthdayWishes() {
+        log.info("Manual trigger requested for birthday wishes");
+        dealerBirthdayService.sendBirthdayWishes();
+        return ResponseEntity.ok("Birthday wishes trigger completed. Check logs for details.");
     }
 }

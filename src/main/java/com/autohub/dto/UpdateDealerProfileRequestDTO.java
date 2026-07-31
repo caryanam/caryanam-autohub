@@ -17,23 +17,8 @@ public class UpdateDealerProfileRequestDTO {
 
     @NotNull(message = "Date of Birth is Required")
     @Past(message = "Date of Birth must be in the past")
-    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private java.time.LocalDate dateOfBirth;
-//
-//    @NotBlank(message = "Owner Name is Required")
-//    @Size(
-//            min = 3,
-//            max = 100,
-//            message = "Owner Name must be between 3 and 100 characters"
-//    )
-//    @Pattern(
-//            regexp = "^[A-Za-z ]+$",
-//            message = "Owner Name must contain only alphabets and spaces"
-//    )
-//    private String ownerName;
-//
-//    @NotBlank(message = "Mobile Number is Required")
-//    private String dealerMobile;
 
     @NotBlank(message = "WhatsAPP Number is Required")
     @Pattern(

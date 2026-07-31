@@ -75,8 +75,6 @@ public class DealerBirthdayService {
                             .templateName(properties.birthdayTemplateName())
                             .build();
 
-                    logEntry = birthdayLogRepository.save(logEntry);
-
                     WhatsAppBirthdayClient.BirthdaySendResult result = 
                             birthdayClient.sendBirthdayWish(toMobile, dealer.getOwnerName());
 
