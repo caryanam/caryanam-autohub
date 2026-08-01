@@ -27,7 +27,7 @@ public class Dealer {
     @Column(nullable = false)
     private String ownerName;
 
-    private LocalDate dateOfBirth;
+//    private LocalDate dateOfBirth;
 
     private String gstNumber;
 
@@ -42,7 +42,7 @@ public class Dealer {
     @Column(nullable = false)
     private String whatsapp;
 
-    @Column(nullable = false)
+//    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)

@@ -26,10 +26,10 @@ public class DealerRegisterDTO {
     )
     private String ownerName;
 
-    @NotNull(message = "Date of Birth is Required")
-    @Past(message = "Date of Birth must be in the past")
-    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
-    private java.time.LocalDate dateOfBirth;
+//    @NotNull(message = "Date of Birth is Required")
+//    @Past(message = "Date of Birth must be in the past")
+//    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+//    private java.time.LocalDate dateOfBirth;
 
     @Pattern(
             regexp = "^$|^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$",

@@ -29,8 +29,7 @@ public class DealerImportServiceImpl
     @Transactional
     public void importDealerData(MultipartFile excel) throws Exception {
 
-        try (Workbook workbook =
-                     WorkbookFactory.create(excel.getInputStream())) {
+        try (Workbook workbook = WorkbookFactory.create(excel.getInputStream())) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -43,9 +42,7 @@ public class DealerImportServiceImpl
             java.util.Set<String> processedWhatsapps = new java.util.HashSet<>();
             java.util.Set<String> processedEmails = new java.util.HashSet<>();
 
-            for (int rowNum = 1;
-                 rowNum <= sheet.getLastRowNum();
-                 rowNum++) {
+            for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
 
                 try {
 
@@ -57,8 +54,7 @@ public class DealerImportServiceImpl
 
                     Dealer dealer = new Dealer();
 
-                    String dealerName =
-                            getStringValue(formatter, row, 1);
+                    String dealerName = getStringValue(formatter, row, 1);
 
                     dealer.setOwnerName(
                             dealerName.isBlank()
@@ -70,16 +66,14 @@ public class DealerImportServiceImpl
                                     ? "Unknown Dealer " + rowNum
                                     : dealerName);
 
-                    Long years =
-                            getLongValue(formatter, row, 2);
+                    Long years = getLongValue(formatter, row, 2);
 
                     dealer.setYearsInBusiness(
                             years != null
                                     ? years.intValue()
                                     : 0);
 
-                    String mobile =
-                            getStringValue(formatter, row, 3);
+                    String mobile = getStringValue(formatter, row, 3);
                     if (mobile.isBlank()) {
                         mobile = "NA_" + rowNum;
                     } else {
@@ -92,8 +86,7 @@ public class DealerImportServiceImpl
                     }
                     dealer.setDealerMobile(mobile);
 
-                    String whatsapp =
-                            getStringValue(formatter, row, 4);
+                    String whatsapp = getStringValue(formatter, row, 4);
                     if (whatsapp.isBlank()) {
                         whatsapp = dealer.getDealerMobile();
                     }
@@ -107,8 +100,7 @@ public class DealerImportServiceImpl
                     }
                     dealer.setWhatsapp(whatsapp);
 
-                    String password =
-                            getStringValue(formatter, row, 5);
+                    String password = getStringValue(formatter, row, 5);
 
                     if (password.isBlank()) {
                         password = "pass@123";
@@ -137,14 +129,12 @@ public class DealerImportServiceImpl
                                     ? "000000"
                                     : getStringValue(formatter, row, 9));
 
-                    String executiveNumber =
-                            getStringValue(formatter, row, 10);
+                    String executiveNumber = getStringValue(formatter, row, 10);
 
                     dealer.setExecutiveMobile(
                             executiveNumber != null && !executiveNumber.trim().isEmpty()
                                     ? executiveNumber.trim()
-                                    : null
-                    );
+                                    : null);
 
                     String email = getStringValue(formatter, row, 11);
 
@@ -170,9 +160,7 @@ public class DealerImportServiceImpl
                     dealer.setSubscriptionStartDate(LocalDateTime.now());
                     dealer.setSubscriptionEndDate(LocalDateTime.now().plusMonths(1));
 
-
                     dealer.setSubscriptionActive(true);
-
 
                     Dealer save = dealerRepository.save(dealer);
 
