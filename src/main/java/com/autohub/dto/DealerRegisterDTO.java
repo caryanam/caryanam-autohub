@@ -63,7 +63,7 @@ public class DealerRegisterDTO {
     )
     private String whatsapp;
 
-    @NotBlank(message = "Email is Required")
+//    @NotBlank(message = "Email is Required")
     @Email(message = "Invalid email format")
     @Pattern(
             regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$",
