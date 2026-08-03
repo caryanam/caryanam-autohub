@@ -27,6 +27,24 @@ public class CustomerController {
         return new ResponseEntity<>(new ResponseDto(200, "Customer Registration Successfully", responseDTO), HttpStatus.OK);
     }
 
+    @PostMapping("/send-registration-otp")
+    @Operation(summary = "Send Registration OTP API")
+    public ResponseEntity<ResponseDto<String>> sendRegistrationOtp(@RequestParam String email) {
+        String message = customerService.sendRegistrationOtp(email);
+        return ResponseEntity.ok(
+                new ResponseDto<>(200, "Registration OTP Sent", message)
+        );
+    }
+
+    @PostMapping("/verify-registration-otp")
+    @Operation(summary = "Verify Registration OTP API")
+    public ResponseEntity<ResponseDto<String>> verifyRegistrationOtp(@RequestBody VerifyOtpDTO dto) {
+        String message = customerService.verifyRegistrationOtp(dto.getEmail(), dto.getOtp());
+        return ResponseEntity.ok(
+                new ResponseDto<>(200, "Registration OTP Verified", message)
+        );
+    }
+
     //delete
     @DeleteMapping("/delete-account")
     public ResponseEntity<String> deleteAccount(

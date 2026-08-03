@@ -252,8 +252,11 @@ public class AuthServiceImpl implements AuthService {
                 dealerRepository.findByEmail(email);
 
         if (dealerOpt.isPresent()) {
-
             Dealer dealer = dealerOpt.get();
+
+            if (dealer.getOtpGeneratedTime() != null && dealer.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
+                throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+            }
 
             dealer.setOtp(otp);
             dealer.setOtpGeneratedTime(LocalDateTime.now());
@@ -271,8 +274,11 @@ public class AuthServiceImpl implements AuthService {
                 customerRepository.findByEmail(email);
 
         if (customerOpt.isPresent()) {
-
             Customer customer = customerOpt.get();
+
+            if (customer.getOtpGeneratedTime() != null && customer.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
+                throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+            }
 
             customer.setOtp(otp);
             customer.setOtpGeneratedTime(LocalDateTime.now());
@@ -290,8 +296,11 @@ public class AuthServiceImpl implements AuthService {
                 adminRepository.findByEmail(email);
 
         if (adminOpt.isPresent()) {
-
             Admin admin = adminOpt.get();
+
+            if (admin.getOtpGeneratedTime() != null && admin.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
+                throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+            }
 
             admin.setOtp(otp);
             admin.setOtpGeneratedTime(LocalDateTime.now());

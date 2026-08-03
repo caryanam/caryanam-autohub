@@ -10,5 +10,9 @@ public interface CustomerService {
 
     CustomerRegistrationResponseDTO customerRegistration(CustomerRegistrationRequestDTO requestDTO);
 
+    String sendRegistrationOtp(String email);
+
+    String verifyRegistrationOtp(String email, String otp);
+
     String deleteCustomerAccount(DeleteCustomerAccountRequestDTO request);
 }

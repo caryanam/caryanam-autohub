@@ -42,6 +42,7 @@ public class Dealer {
     @Column(nullable = false)
     private String whatsapp;
 
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)

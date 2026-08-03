@@ -77,6 +77,24 @@ public class DealerController {
 
 }
 
+    @PostMapping("/send-registration-otp")
+    @Operation(summary = "Send Registration OTP API")
+    public ResponseEntity<ResponseDto<String>> sendRegistrationOtp(@RequestParam String email) {
+        String message = dealerService.sendRegistrationOtp(email);
+        return ResponseEntity.ok(
+                new ResponseDto<>(200, "Registration OTP Sent", message)
+        );
+    }
+
+    @PostMapping("/verify-registration-otp")
+    @Operation(summary = "Verify Registration OTP API")
+    public ResponseEntity<ResponseDto<String>> verifyRegistrationOtp(@RequestBody VerifyOtpDTO dto) {
+        String message = dealerService.verifyRegistrationOtp(dto.getEmail(), dto.getOtp());
+        return ResponseEntity.ok(
+                new ResponseDto<>(200, "Registration OTP Verified", message)
+        );
+    }
+
     // ================= UPDATE DEALER PROFILE =================
 
     @PutMapping(value = "/update-profile/{dealerId}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })

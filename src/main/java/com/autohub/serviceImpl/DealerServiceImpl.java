@@ -6,6 +6,7 @@ import com.autohub.entity.Dealer;
 import com.autohub.entity.Payment;
 import com.autohub.enums.*;
 import com.autohub.exception.ResourceNotFoundException;
+import com.autohub.entity.EmailVerification;
 import com.autohub.repository.*;
 import com.autohub.service.DealerService;
 
@@ -36,6 +37,7 @@ public class DealerServiceImpl implements DealerService {
     private String uploadDir;
 
     private final DealerRepository dealerRepository;
+    private final EmailVerificationRepository emailVerificationRepository;
     private final VehicleRepository vehicleRepository;
     private final CustomerLeadRepository leadRepository;
     private final PasswordEncoder passwordEncoder;
@@ -104,6 +106,17 @@ public class DealerServiceImpl implements DealerService {
 
         dealer.setRole(Role.DEALER);
 
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+            EmailVerification emailVerification = emailVerificationRepository.findByEmail(dto.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Email not verified. Please verify your email first."));
+            if (!emailVerification.getIsVerified()) {
+                throw new RuntimeException("Email not verified. Please verify your email first.");
+            }
+            dealer.setIsOtpVerified(true);
+        } else {
+            dealer.setIsOtpVerified(true);
+        }
+
         Dealer savedDealer = dealerRepository.save(dealer);
 
         if (dealerLogo != null && !dealerLogo.isEmpty()) {
@@ -143,6 +156,8 @@ public class DealerServiceImpl implements DealerService {
         }
 
         savedDealer = dealerRepository.save(savedDealer);
+
+        // OTP already verified during inline step
 
         return modelMapper.map(savedDealer, DealerResponseDTO.class);
     }
@@ -453,5 +468,56 @@ public class DealerServiceImpl implements DealerService {
                 dealer.getSubscriptionEndDate(),
                 remainingDays
         );
+    }
+
+    @Override
+    public String sendRegistrationOtp(String email) {
+        if (dealerRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already registered");
+        }
+
+        String otp = String.valueOf((int) ((Math.random() * 900000) + 100000));
+        EmailVerification verification = emailVerificationRepository.findByEmail(email)
+                .orElse(new EmailVerification());
+
+        if (verification.getOtpGeneratedTime() != null && verification.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+        }
+
+        verification.setEmail(email);
+        verification.setOtp(otp);
+        verification.setOtpGeneratedTime(LocalDateTime.now());
+        verification.setIsVerified(false);
+
+        emailVerificationRepository.save(verification);
+        emailService.sendRegistrationOtp(email, otp);
+
+        return "OTP sent successfully";
+    }
+
+    @Override
+    public String verifyRegistrationOtp(String email, String otp) {
+        EmailVerification verification = emailVerificationRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("OTP not sent to this email"));
+
+        if (verification.getIsVerified() != null && verification.getIsVerified()) {
+            throw new RuntimeException("Email is already verified");
+        }
+
+        if (verification.getOtp() == null || !verification.getOtp().equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        if (verification.getOtpGeneratedTime() == null ||
+                verification.getOtpGeneratedTime().plusMinutes(5).isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("OTP has expired");
+        }
+
+        verification.setIsVerified(true);
+        verification.setOtp("");
+        verification.setOtpGeneratedTime(LocalDateTime.now());
+        emailVerificationRepository.save(verification);
+
+        return "Email verified successfully";
     }
 }

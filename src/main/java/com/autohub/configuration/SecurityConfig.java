@@ -55,6 +55,8 @@ public class SecurityConfig {
                                 "/api/customer/**",
                                 "/api/pincode/**",
                                 "/api/dealer/register/**",
+                                "/api/dealer/send-registration-otp",
+                                "/api/dealer/verify-registration-otp",
                                 "/api/vehicle/dealer/**",
                                 "/api/vehicle/**",
                                 "/api/vehicle/featured",
@@ -69,7 +71,8 @@ public class SecurityConfig {
                                 "/api/olx/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/error"
                         ).permitAll()
 
                         // ── Authenticated endpoints ──
@@ -162,6 +165,9 @@ public class SecurityConfig {
         CorsConfiguration browserConfig = new CorsConfiguration();
         browserConfig.setAllowedOrigins(List.of(
                 "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:5175",
+                "http://localhost:5176",
                 "http://localhost:3000",
                 "http://localhost:63342",
                 "http://127.0.0.1:5500",

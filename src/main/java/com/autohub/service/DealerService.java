@@ -11,6 +11,10 @@ public interface DealerService {
 
     DealerResponseDTO registerDealer(DealerRegisterDTO dto, MultipartFile dealerLogo,MultipartFile showroomImage);
 
+    String sendRegistrationOtp(String email);
+
+    String verifyRegistrationOtp(String email, String otp);
+
     DealerResponseDTO getDealerProfile(Long dealerId);
 
     List<DealerSubscriptionResponseDTO> getSubscriptions();
