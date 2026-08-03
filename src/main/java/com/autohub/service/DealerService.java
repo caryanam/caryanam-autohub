@@ -21,7 +21,7 @@ public interface DealerService {
 
     DealerResponseDTO updateDealerAccountStatus(Long dealerId,DealerAccountStatusRequestDTO requestDTO);
 
-    DealerProfileResponseDTO updateDealerProfile(Long id, UpdateDealerProfileRequestDTO dto);
+    DealerProfileResponseDTO updateDealerProfile(Long id, UpdateDealerProfileRequestDTO dto, MultipartFile dealerLogo, MultipartFile showroomImage);
 
     DashboardResponseDTO getDashboard(Long dealerId);
 

@@ -147,84 +147,6 @@ public class DealerServiceImpl implements DealerService {
         return modelMapper.map(savedDealer, DealerResponseDTO.class);
     }
 
-//    @Override
-//    public DealerResponseDTO registerDealer(DealerRegisterDTO dto, MultipartFile dealerLogo, MultipartFile showroomImage) {
-//
-//    if (dealerRepository.existsByEmail(dto.getEmail())) {
-//        throw new RuntimeException("Email already registered");
-//    }
-//
-//
-//
-//    validateImage(dealerLogo, "Dealer Logo");
-//    validateImage(showroomImage, "Showroom Image");
-//
-//    Dealer dealer = new Dealer();
-//    dealer.setBusinessName(dto.getBusinessName());
-//    dealer.setOwnerName(dto.getOwnerName());
-//    dealer.setGstNumber(dto.getGstNumber());
-//    dealer.setYearsInBusiness(dto.getYearsInBusiness());
-//    dealer.setMobile(dto.getMobile());
-//    dealer.setWhatsapp(dto.getWhatsapp());
-//    dealer.setEmail(dto.getEmail());
-//    dealer.setPassword(passwordEncoder.encode(dto.getPassword()));
-//    dealer.setAddress(dto.getAddress());
-//    dealer.setDealerAccountStatus(DealerStatus.PENDING);
-//    dealer.setCity(dto.getCity());
-//    dealer.setState(dto.getState());
-//    dealer.setPinCode(dto.getPinCode());
-//    dealer.setRole(Role.DEALER);
-//
-//
-//    Dealer savedDealer = dealerRepository.save(dealer);
-//
-//    String logoPath = saveFile(
-//            dealerLogo,
-//            String.valueOf(savedDealer.getId()),
-//            "logo"
-//    );
-//
-//    String showroomPath = saveFile(
-//            showroomImage,
-//            String.valueOf(savedDealer.getId()),
-//            "showroom"
-//    );
-//
-//    savedDealer.setDealerLogo(logoPath);
-//    savedDealer.setShowroomImage(showroomPath);
-//
-//    savedDealer = dealerRepository.save(savedDealer);
-//
-//    return modelMapper.map(savedDealer, DealerResponseDTO.class);
-//
-//}
-
-//    private void validateImage(MultipartFile file, String fieldName) {
-//
-//        if (file == null || file.isEmpty()) {
-//            throw new RuntimeException(fieldName + " is required");
-//        }
-//
-//        String fileName = file.getOriginalFilename();
-//
-//        if (fileName == null) {
-//            throw new RuntimeException(fieldName + " is invalid");
-//        }
-//
-//        String extension =
-//                fileName.substring(fileName.lastIndexOf(".") + 1)
-//                        .toLowerCase();
-//
-//        if (!extension.equals("jpg")
-//                && !extension.equals("jpeg")
-//                && !extension.equals("png")) {
-//
-//            throw new RuntimeException(
-//                    fieldName + " must be JPG, JPEG or PNG format");
-//        }
-//    }
-
-
     // ============================================================
 // Replace the existing saveFile method with this one.
 // Add stripLeadingSlash as a new private helper alongside it.
@@ -288,48 +210,6 @@ public class DealerServiceImpl implements DealerService {
     }
 
 
-
-
-
-
-//    private String saveFile(MultipartFile file,String dealerId,String prefix) {
-//
-//        try {
-//
-//            File directory = new File(uploadDir);
-//
-//            if (!directory.exists()) {
-//                directory.mkdirs();
-//            }
-//
-//            String extension =
-//                    file.getOriginalFilename()
-//                            .substring(
-//                                    file.getOriginalFilename()
-//                                            .lastIndexOf("."));
-//
-//            String fileName =
-//                    dealerId +
-//                            "_" +
-//                            prefix +
-//                            extension;
-//
-//            Path path =
-//                    Paths.get(uploadDir, fileName);
-//
-//            Files.copy(
-//                    file.getInputStream(),
-//                    path,
-//                    StandardCopyOption.REPLACE_EXISTING);
-//
-//            return path.toString();
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException("Failed to upload file");
-//        }
-//    }
-
-
     @Override
     public DashboardResponseDTO getDashboard(Long dealerId) {
 
@@ -348,21 +228,6 @@ public class DealerServiceImpl implements DealerService {
         dto.setTotalLeads(leadRepository.countByDealerId(dealer.getId()));
 
         dto.setVehicleViews(vehicleViewRepository.countViewsByDealerId(dealerId));
-//
-//        dto.setMonthlyViews(
-//                vehicleViewService.getMonthlyViews(dealerId)
-//                        .stream()
-//                        .map(view -> view.getViews().intValue())
-//                        .toList()
-//        );
-//
-//        dto.setMonthlyLeads(
-//                leadService.getMonthlyLead(dealerId)
-//                        .stream()
-//                        .map(lead -> lead.getLeads().intValue())
-//                        .toList()
-//        );
-
         return dto;
     }
 
@@ -416,47 +281,8 @@ public class DealerServiceImpl implements DealerService {
     }
 
 
-
-//    @Override
-//    public DealerResponseDTO getDealerProfile(Long dealerId) {
-//        Dealer dealer = dealerRepository.findById(dealerId).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
-//
-//
-//       return DealerResponseDTO.builder()
-//                .id(dealer.getId())
-//                .businessName(dealer.getBusinessName())
-//                .ownerName(dealer.getOwnerName())
-//                .gstNumber(dealer.getGstNumber())
-//                .yearsInBusiness(dealer.getYearsInBusiness())
-//                .dealerMobile(dealer.getDealerMobile())
-//               .executiveMobile(dealer.getExecutiveMobile())
-//                .whatsapp(dealer.getWhatsapp())
-//                .email(dealer.getEmail())
-//                .address(dealer.getAddress())
-//                .city(dealer.getCity())
-//                .state(dealer.getState())
-//                .pinCode(dealer.getPinCode()).dealerLogo(
-//                       dealer.getDealerLogo() != null
-//                               ? serverUrl+
-//                               dealer.getDealerLogo().replace("\\", "/")
-//                               : null
-//               )
-//
-//               .showroomImage(
-//                       dealer.getShowroomImage() != null
-//                               ? serverUrl+
-//                               dealer.getShowroomImage().replace("\\", "/")
-//                               : null
-//               )
-//
-//               .dealerAccountStatus(dealer.getDealerAccountStatus())
-//                .createdAt(dealer.getCreatedAt())
-//                .build();
-//
-//    }
-
     @Override
-    public DealerProfileResponseDTO updateDealerProfile(Long id, UpdateDealerProfileRequestDTO dto) {
+    public DealerProfileResponseDTO updateDealerProfile(Long id, UpdateDealerProfileRequestDTO dto, MultipartFile dealerLogo, MultipartFile showroomImage) {
 
         Dealer dealer = dealerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
         dealer.setBusinessName(dto.getBusinessName());
@@ -467,6 +293,28 @@ public class DealerServiceImpl implements DealerService {
         dealer.setCity(dto.getCity());
         dealer.setPinCode(dto.getPinCode());
         dealer.setState(dto.getState());
+
+        if (dealerLogo != null && !dealerLogo.isEmpty()) {
+            if (!dealerLogo.getContentType().startsWith("image/")) {
+                throw new RuntimeException("Only image files are allowed");
+            }
+            if (dealerLogo.getSize() > 5 * 1024 * 1024) {
+                throw new RuntimeException("Logo size should be less than 5 MB");
+            }
+            String logoPath = saveFile(dealerLogo, String.valueOf(dealer.getId()), "logo");
+            dealer.setDealerLogo(logoPath);
+        }
+
+        if (showroomImage != null && !showroomImage.isEmpty()) {
+            if (!showroomImage.getContentType().startsWith("image/")) {
+                throw new RuntimeException("Only image files are allowed");
+            }
+            if (showroomImage.getSize() > 5 * 1024 * 1024) {
+                throw new RuntimeException("Showroom Image size should be less than 5 MB");
+            }
+            String showroomPath = saveFile(showroomImage, String.valueOf(dealer.getId()), "showroom");
+            dealer.setShowroomImage(showroomPath);
+        }
 
         Dealer save = dealerRepository.save(dealer);
 
@@ -606,51 +454,4 @@ public class DealerServiceImpl implements DealerService {
                 remainingDays
         );
     }
-//
-//    @Override
-//    public DealerCurrentSubscriptionPlanDTO getDealerCurrentSubscriptionPlan(Long dealerId) {
-//        Dealer dealer = dealerRepository.findById(dealerId)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException("Dealer Not Found"));
-//
-//
-//        Payment payment = paymentRepository.findTopByDealerIdOrderByPaymentIdDesc(dealerId)
-//                .orElseThrow(() ->
-//                        new RuntimeException("You don't have any subscription plan."));
-//
-//        if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
-//
-//            throw new RuntimeException(
-//                    "Your subscription plan is waiting for admin approval.");
-//        }
-//
-//        SubscriptionPlan plan = payment.getSubscriptionPlan();
-//
-//
-//        Long remainingDays = 0L;
-//
-//        if (dealer.getSubscriptionEndDate() != null) {
-//
-//            remainingDays = ChronoUnit.DAYS.between(
-//                    LocalDate.now(),
-//                    dealer.getSubscriptionEndDate().toLocalDate()
-//            );
-//
-//            if (remainingDays < 0) {
-//                remainingDays = 0L;
-//            }
-//        }
-//
-//        return new DealerCurrentSubscriptionPlanDTO(
-//                dealer.getId(),
-//                plan.name(),
-//                plan.getAmount(),
-//                plan.getVehicleLimit(),
-//                plan.getValidityMonths(),
-//                dealer.getSubscriptionStartDate(),
-//                dealer.getSubscriptionEndDate(),
-//                remainingDays
-//        );
-//    }
-
 }

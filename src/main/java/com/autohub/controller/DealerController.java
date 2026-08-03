@@ -79,11 +79,22 @@ public class DealerController {
 
     // ================= UPDATE DEALER PROFILE =================
 
-    @PutMapping("/update-profile/{dealerId}")
+    @PutMapping(value = "/update-profile/{dealerId}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     @Operation(summary = "Update Dealer Profile API")
-    public ResponseEntity<ResponseDto<DealerProfileResponseDTO>> updateDealerProfile(@PathVariable Long dealerId,@Valid @RequestBody UpdateDealerProfileRequestDTO request) {
+    public ResponseEntity<ResponseDto<DealerProfileResponseDTO>> updateDealerProfile(
+            @PathVariable Long dealerId,
+            @RequestPart("request") String requestString,
+            @RequestPart(value = "dealerLogo", required = false) MultipartFile dealerLogo,
+            @RequestPart(value = "showroomImage", required = false) MultipartFile showroomImage) throws Exception {
 
-        DealerProfileResponseDTO dealerResponseDTO = dealerService.updateDealerProfile(dealerId, request);
+        UpdateDealerProfileRequestDTO request = objectMapper.readValue(requestString, UpdateDealerProfileRequestDTO.class);
+
+        Set<ConstraintViolation<UpdateDealerProfileRequestDTO>> violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
+
+        DealerProfileResponseDTO dealerResponseDTO = dealerService.updateDealerProfile(dealerId, request, dealerLogo, showroomImage);
 
         return new ResponseEntity<>(new ResponseDto<>(200,"Dealer Profile Updated Successfully",dealerResponseDTO),HttpStatus.OK);
     }
