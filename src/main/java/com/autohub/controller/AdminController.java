@@ -134,7 +134,13 @@ public class AdminController {
         );
     }
 
-
+    // ================= DELETE DEALER =================
+    @DeleteMapping("/dealer/{dealerId}")
+    @Operation(summary = "Delete Dealer By Admin API")
+    public ResponseEntity<ResponseDto<String>> deleteDealer(@PathVariable Long dealerId) {
+        adminService.deleteDealer(dealerId);
+        return ResponseEntity.ok(new ResponseDto<>(200, "Dealer and all associated data deleted successfully", null));
+    }
 
 }
 

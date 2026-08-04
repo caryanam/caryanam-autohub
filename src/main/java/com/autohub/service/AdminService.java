@@ -38,6 +38,7 @@ public interface AdminService {
 
     List<AdminMonthlyRevenueDTO> getMonthlyRevenueAnalytics();
 
-
+    //DELETE DEALER
+    void deleteDealer(Long dealerId);
 
 }

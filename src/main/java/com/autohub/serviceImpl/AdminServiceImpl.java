@@ -11,6 +11,8 @@ import com.autohub.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
 import java.math.BigDecimal;
 import java.time.Month;
@@ -30,6 +32,8 @@ public class AdminServiceImpl implements AdminService {
     private final VehicleRepository vehicleRepository;
 
     private final PaymentRepository paymentRepository;
+
+    private final EntityManager entityManager;
 
     @Value("${server.port}")
     private String port;
@@ -85,57 +89,6 @@ public class AdminServiceImpl implements AdminService {
      return serverUrl + normalized;
  }
 
-
-
-
-
-
-
-
-
-//    //All dealer
-//    @Override
-//    public List<DealerResponseDTO> allDealer() {
-//
-//        List<Dealer> all = dealerRepository.findAll();
-//
-//        if (all.isEmpty()) {
-//            throw new ResourceNotFoundException("Dealer has no vehicles");
-//        }
-//
-//        return all.stream()
-//                .map(dealer -> DealerResponseDTO.builder()
-//                        .id(dealer.getId())
-//                        .businessName(dealer.getBusinessName())
-//                        .ownerName(dealer.getOwnerName())
-//                        .gstNumber(dealer.getGstNumber())
-//                        .yearsInBusiness(dealer.getYearsInBusiness())
-//                        .dealerMobile(dealer.getDealerMobile())
-//                        .executiveMobile(dealer.getExecutiveMobile())
-//                        .whatsapp(dealer.getWhatsapp())
-//                        .email(dealer.getEmail())
-//                        .address(dealer.getAddress())
-//                        .city(dealer.getCity())
-//                        .state(dealer.getState())
-//                        .pinCode(dealer.getPinCode())
-//                        .dealerLogo(dealer.getDealerLogo())
-//                        .showroomImage(
-//                                dealer.getShowroomImage() == null
-//                                        ? null
-//                                        : serverUrl+
-//                                        dealer.getShowroomImage().replace("\\", "/")
-//                        )
-//                        .dealerLogo(
-//                                dealer.getDealerLogo() == null
-//                                        ? null
-//                                        : serverUrl+
-//                                        dealer.getDealerLogo().replace("\\", "/")
-//                        )
-//                        .dealerAccountStatus(dealer.getDealerAccountStatus())
-//                        .createdAt(dealer.getCreatedAt())
-//                        .build())
-//                .toList();
-//    }
 
     //Dealer Count
     @Override
@@ -397,5 +350,72 @@ public class AdminServiceImpl implements AdminService {
         return response;
     }
 
-}
+    @Override
+    @Transactional
+    public void deleteDealer(Long dealerId) {
+        Dealer dealer = dealerRepository.findById(dealerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dealer not found with id: " + dealerId));
 
+        // Delete from WhatsappBirthdayMessageLog
+        entityManager.createQuery("DELETE FROM WhatsappBirthdayMessageLog w WHERE w.dealerId = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from WhatsappMessageLog
+        entityManager.createQuery("DELETE FROM WhatsappMessageLog w WHERE w.dealerId = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from WhatsappOfferMessageLog
+        entityManager.createQuery("DELETE FROM WhatsappOfferMessageLog w WHERE w.dealerId = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from WhatsappVehicleShareLog
+        entityManager.createQuery("DELETE FROM WhatsappVehicleShareLog w WHERE w.dealerId = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+
+        // Delete from CustomerLead
+        entityManager.createQuery("DELETE FROM CustomerLead c WHERE c.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from Payment
+        entityManager.createQuery("DELETE FROM Payment p WHERE p.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from SocialPostBatchItem (via SocialPostBatch)
+        entityManager.createQuery("DELETE FROM SocialPostBatchItem i WHERE i.batch IN (SELECT b FROM SocialPostBatch b WHERE b.dealer.id = :dealerId)")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from SocialPostBatch
+        entityManager.createQuery("DELETE FROM SocialPostBatch b WHERE b.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from VehicleSocialPostRequest
+        entityManager.createQuery("DELETE FROM VehicleSocialPostRequest v WHERE v.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from VehicleView
+        entityManager.createQuery("DELETE FROM VehicleView v WHERE v.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from Wishlist (via Vehicle)
+        entityManager.createQuery("DELETE FROM Wishlist w WHERE w.vehicle IN (SELECT v FROM Vehicle v WHERE v.dealer.id = :dealerId)")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from VehicleMedia (via Vehicle)
+        entityManager.createQuery("DELETE FROM VehicleMedia m WHERE m.vehicle IN (SELECT v FROM Vehicle v WHERE v.dealer.id = :dealerId)")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from Vehicle
+        entityManager.createQuery("DELETE FROM Vehicle v WHERE v.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Chat messages and chat rooms
+        entityManager.createQuery("DELETE FROM ChatMessage c WHERE (c.senderId = :dealerId AND c.senderRole = 'DEALER') OR (c.receiverId = :dealerId AND c.receiverRole = 'DEALER')")
+                .setParameter("dealerId", dealerId).executeUpdate();
+        entityManager.createQuery("DELETE FROM ChatRoom c WHERE (c.user1Id = :dealerId AND c.user1Role = 'DEALER') OR (c.user2Id = :dealerId AND c.user2Role = 'DEALER')")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete the dealer
+        dealerRepository.delete(dealer);
+    }
+}
