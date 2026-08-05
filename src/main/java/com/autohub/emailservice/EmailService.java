@@ -7,6 +7,6 @@ public interface EmailService {
 
     void sendOtp(String email, String otp);
 
-    void sendRegistrationOtp(String email, String otp);
+    void sendRegistrationOtp(String email, String otp, String role);
 
 }

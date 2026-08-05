@@ -1,7 +1,6 @@
 package com.autohub.emailservice;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -9,10 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import com.autohub.entity.*;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.MimeMessageHelper;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -64,18 +60,19 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendRegistrationOtp(String email, String otp) {
+    public void sendRegistrationOtp(String email, String otp, String role) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail);
             helper.setTo(email);
-            helper.setSubject("Caryanam - Dealer Registration Verification");
+            String subject = "Dealer".equalsIgnoreCase(role) ? "Caryanam - Dealer Verification OTP" : "Caryanam - Customer Verification OTP";
+            helper.setSubject(subject);
 
             String userName = email.substring(0, email.indexOf('@'));
 
-            String htmlContent = getRegistrationTemplate()
+            String htmlContent = getRegistrationTemplate(role)
                     .replace("{{USER_NAME}}", userName)
                     .replace("{{OTP}}", otp);
 
@@ -100,7 +97,7 @@ body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:
 .content{padding:40px;color:#fff}
 .content p{color:#d5d5d5;line-height:28px}
 .otpbox{background:#fff;border-radius:14px;padding:30px;text-align:center;margin:30px 0}
-.otp{font-size:42px;font-weight:bold;color:#EC003F;letter-spacing:10px}
+.otp{font-size:32px;font-weight:bold;color:#EC003F;letter-spacing:6px}
 .notice{margin-top:20px;background:#1c1c1c;border-left:4px solid #EC003F;padding:18px;border-radius:8px;color:#ccc}
 .footer{background:#0b0b0b;padding:24px;text-align:center;color:#999}
 .footer a{color:#EC003F;text-decoration:none}
@@ -108,7 +105,7 @@ body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:
 <div class="container">
 <div class="header">
 <div class="brand">CARY<span>A</span>NAM</div>
-<div class="slogan">India's most trusted used-car dealer marketplace.<br>Verified inventory across 150+ cities.</div>
+<div class="slogan">India's most trusted used-car dealer marketplace.</div>
 </div>
 <div class="content">
 <h2>Password Reset Request</h2>
@@ -132,7 +129,10 @@ body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:
 """;
     }
 
-    private String getRegistrationTemplate() {
+    private String getRegistrationTemplate(String role) {
+        String title = "Dealer".equalsIgnoreCase(role) ? "Dealer Registration Verification" : "Customer Registration Verification";
+        String bodyText = "Dealer".equalsIgnoreCase(role) ? "registering your dealership" : "registering as a customer";
+        
         return """
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Caryanam OTP</title><style>
 body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:30px}
@@ -144,7 +144,7 @@ body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:
 .content{padding:40px;color:#fff}
 .content p{color:#d5d5d5;line-height:28px}
 .otpbox{background:#fff;border-radius:14px;padding:30px;text-align:center;margin:30px 0}
-.otp{font-size:42px;font-weight:bold;color:#EC003F;letter-spacing:10px}
+.otp{font-size:32px;font-weight:bold;color:#EC003F;letter-spacing:6px}
 .notice{margin-top:20px;background:#1c1c1c;border-left:4px solid #EC003F;padding:18px;border-radius:8px;color:#ccc}
 .footer{background:#0b0b0b;padding:24px;text-align:center;color:#999}
 .footer a{color:#EC003F;text-decoration:none}
@@ -152,12 +152,12 @@ body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:
 <div class="container">
 <div class="header">
 <div class="brand">CARY<span>A</span>NAM</div>
-<div class="slogan">India's most trusted used-car dealer marketplace.<br>Verified inventory across 150+ cities.</div>
+<div class="slogan">India's most trusted used-car dealer marketplace.</div>
 </div>
 <div class="content">
-<h2>Dealer Registration Verification</h2>
+<h2>{{TITLE}}</h2>
 <p>Hello <strong>{{USER_NAME}}</strong>,</p>
-<p>Thank you for registering your dealership on <strong>Caryanam</strong>! To complete your registration, please use the verification code below to verify your email address.</p>
+<p>Thank you for {{BODY_TEXT}} on <strong>Caryanam</strong>. To complete your registration, please use the verification code below to verify your email address.</p>
 <div class="otpbox">
 <div style="color:#666">YOUR ONE-TIME PASSWORD</div>
 <div class="otp">{{OTP}}</div>
@@ -172,7 +172,9 @@ body{margin:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;padding:
 <p>Secure • Reliable • Trusted</p>
 </div>
 </div></body></html>
-""";
+"""
+        .replace("{{TITLE}}", title)
+        .replace("{{BODY_TEXT}}", bodyText);
     }
 
 }

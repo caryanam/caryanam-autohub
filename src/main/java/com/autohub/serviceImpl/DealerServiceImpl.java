@@ -490,7 +490,7 @@ public class DealerServiceImpl implements DealerService {
         verification.setIsVerified(false);
 
         emailVerificationRepository.save(verification);
-        emailService.sendRegistrationOtp(email, otp);
+        emailService.sendRegistrationOtp(email, otp, "Dealer");
 
         return "OTP sent successfully";
     }
