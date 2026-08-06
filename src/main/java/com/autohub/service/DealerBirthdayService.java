@@ -38,7 +38,7 @@ public class DealerBirthdayService {
      * Runs every day at 7:00 AM.
      * Finds dealers whose birthday is today and sends them a WhatsApp wish.
      */
-    @Scheduled(cron = "0 0 7 * * ?")
+    @Scheduled(cron = "0 0 7 * * ?", zone = "Asia/Kolkata")
     public void sendBirthdayWishes() {
         LocalDate today = LocalDate.now();
         int month = today.getMonthValue();
