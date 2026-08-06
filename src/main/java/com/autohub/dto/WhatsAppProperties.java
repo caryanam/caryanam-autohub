@@ -43,6 +43,10 @@ public record WhatsAppProperties(
         @NotBlank(message = "whatsapp.offer-language-code must be configured")
         String offerLanguageCode,
 
+        // ── NEW field for dealer offer VIDEO broadcast template ──
+        @NotBlank(message = "whatsapp.offer-video-template-name must be configured")
+        String offerVideoTemplateName,
+
         // ── NEW fields for dealer birthday template ──
         @NotBlank(message = "whatsapp.birthday-template-name must be configured")
         String birthdayTemplateName,

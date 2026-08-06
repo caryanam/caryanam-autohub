@@ -204,6 +204,143 @@ public class WhatsAppOfferClient {
         return text.substring(0, maxLength - 3) + "...";
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // VIDEO TEMPLATE METHODS — for caryanam_dealer_offers_video
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Upload video bytes to Meta's media endpoint.
+     * Returns the media handle (ID) to be used in video template header.
+     * Called once per offer broadcast — NOT once per dealer.
+     */
+    public String uploadVideoToMeta(byte[] videoBytes, String originalFilename) {
+        try {
+            String mimeType = resolveVideoMimeType(originalFilename);
+
+            MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
+            bodyBuilder.part("file", new ByteArrayResource(videoBytes) {
+                @Override
+                public String getFilename() {
+                    return originalFilename;
+                }
+            }).contentType(MediaType.parseMediaType(mimeType));
+            bodyBuilder.part("messaging_product", "whatsapp");
+            bodyBuilder.part("type", mimeType);
+
+            String response = whatsAppWebClient.post()
+                    .uri("/{version}/{phoneNumberId}/media",
+                            properties.apiVersion(), properties.phoneNumberId())
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            JsonNode node = objectMapper.readTree(response);
+            String mediaId = node.get("id").asText();
+
+            log.info("Video uploaded to Meta successfully. mediaId=[{}]", mediaId);
+            return mediaId;
+
+        } catch (Exception ex) {
+            log.error("Failed to upload offer video to Meta: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Meta video upload failed: " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Send VIDEO template message to a single dealer.
+     * Uses the mediaId from uploadVideoToMeta in the HEADER component (video type).
+     * Body component carries the 4 text parameters {{1}} to {{4}}.
+     */
+    public OfferSendResult sendOfferVideoTemplate(
+            String toMobileE164,
+            String templateName,
+            String languageCode,
+            String mediaId,
+            String dealerName,     // {{1}}
+            String offerDetails,   // {{2}}
+            String benefits,       // {{3}}
+            String contactInfo     // {{4}}
+    ) {
+        try {
+            // Build the exact JSON Meta expects for a template with
+            // a VIDEO header + 4 BODY parameters
+            String payload = """
+                    {
+                      "messaging_product": "whatsapp",
+                      "to": "%s",
+                      "type": "template",
+                      "template": {
+                        "name": "%s",
+                        "language": { "code": "%s" },
+                        "components": [
+                          {
+                            "type": "header",
+                            "parameters": [
+                              {
+                                "type": "video",
+                                "video": { "id": "%s" }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "body",
+                            "parameters": [
+                              { "type": "text", "text": "%s" },
+                              { "type": "text", "text": "%s" },
+                              { "type": "text", "text": "%s" },
+                              { "type": "text", "text": "%s" }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                    """.formatted(
+                    toMobileE164,
+                    templateName,
+                    languageCode,
+                    mediaId,
+                    escapeJson(truncate(dealerName, 100)),
+                    escapeJson(truncate(offerDetails, 350)),
+                    escapeJson(truncate(benefits, 350)),
+                    escapeJson(truncate(contactInfo, 150))
+            );
+
+            String response = whatsAppWebClient.post()
+                    .uri("/{version}/{phoneNumberId}/messages",
+                            properties.apiVersion(), properties.phoneNumberId())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            JsonNode node = objectMapper.readTree(response);
+            String messageId = node.path("messages").get(0).path("id").asText();
+
+            log.info("Offer VIDEO template sent to [{}]. messageId=[{}]", toMobileE164, messageId);
+            return new OfferSendResult(true, messageId, response, null);
+
+        } catch (WebClientResponseException ex) {
+            String body = ex.getResponseBodyAsString();
+            log.error("Failed to send video offer to [{}]: status={} body={}",
+                    toMobileE164, ex.getStatusCode(), body);
+            return new OfferSendResult(false, null, body, ex.getMessage());
+
+        } catch (Exception ex) {
+            log.error("Unexpected error sending video offer to [{}]: {}", toMobileE164, ex.getMessage(), ex);
+            return new OfferSendResult(false, null, null, ex.getMessage());
+        }
+    }
+
+    private String resolveVideoMimeType(String filename) {
+        if (filename == null) return "video/mp4";
+        String lower = filename.toLowerCase();
+        if (lower.endsWith(".3gp")) return "video/3gpp";
+        return "video/mp4"; // default for .mp4
+    }
+
     public record OfferSendResult(
             boolean success,
             String whatsappMessageId,

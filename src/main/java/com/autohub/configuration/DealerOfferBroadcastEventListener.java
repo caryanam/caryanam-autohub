@@ -4,6 +4,7 @@ import com.autohub.dto.DealerOfferBroadcastEvent;
 import com.autohub.dto.WhatsAppProperties;
 import com.autohub.entity.Dealer;
 import com.autohub.entity.WhatsappOfferMessageLog;
+import com.autohub.enums.OfferTemplateType;
 import com.autohub.enums.WhatsappMessageStatus;
 import com.autohub.repository.DealerOfferRepository;
 import com.autohub.repository.DealerRepository;
@@ -57,8 +58,8 @@ public class DealerOfferBroadcastEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleDealerOfferBroadcast(DealerOfferBroadcastEvent event) {
 
-        log.info("=== OFFER BROADCAST STARTED === offerId=[{}] targeting [{}] dealers",
-                event.offerId(), event.totalDealers());
+        log.info("=== OFFER BROADCAST STARTED === offerId=[{}] template=[{}] targeting [{}] dealers",
+                event.offerId(), event.templateType(), event.totalDealers());
 
         List<Dealer> activeDealers = dealerRepository.findAllActiveDealers();
 
@@ -97,7 +98,8 @@ public class DealerOfferBroadcastEventListener {
                         WhatsappMessageStatus.FAILED,
                         null,
                         null,
-                        "Dealer has no WhatsApp number configured"
+                        "Dealer has no WhatsApp number configured",
+                        event.templateType()
                 );
                 failCount.incrementAndGet();
                 sleepBetweenSends(currentPosition, totalDealers);
@@ -127,7 +129,8 @@ public class DealerOfferBroadcastEventListener {
                         WhatsappMessageStatus.FAILED,
                         null,
                         null,
-                        "Invalid WhatsApp number format: '" + dealer.getWhatsapp() + "'"
+                        "Invalid WhatsApp number format: '" + dealer.getWhatsapp() + "'",
+                        event.templateType()
                 );
                 failCount.incrementAndGet();
                 sleepBetweenSends(currentPosition, totalDealers);
@@ -143,18 +146,34 @@ public class DealerOfferBroadcastEventListener {
                 String safeBenefits = truncate(event.benefits(), 350);
                 String safeContactInfo = truncate(event.contactInfo(), 150);
 
-                // ── Send to this dealer ──
-                WhatsAppOfferClient.OfferSendResult result =
-                        whatsAppOfferClient.sendOfferTemplate(
-                                normalizedNumber,
-                                properties.offerTemplateName(),
-                                properties.offerLanguageCode(),
-                                event.metaImageHandle(),
-                                dealer.getOwnerName(),   // {{1}}
-                                safeOfferDetails,        // {{2}}
-                                safeBenefits,            // {{3}}
-                                safeContactInfo          // {{4}}
-                        );
+                // ── Send to this dealer — branch based on template type ──
+                WhatsAppOfferClient.OfferSendResult result;
+
+                if (event.templateType() == OfferTemplateType.VIDEO) {
+                    // VIDEO template → caryanam_dealer_offers_video
+                    result = whatsAppOfferClient.sendOfferVideoTemplate(
+                            normalizedNumber,
+                            properties.offerVideoTemplateName(),
+                            properties.offerLanguageCode(),
+                            event.metaImageHandle(),
+                            dealer.getOwnerName(),   // {{1}}
+                            safeOfferDetails,        // {{2}}
+                            safeBenefits,            // {{3}}
+                            safeContactInfo          // {{4}}
+                    );
+                } else {
+                    // IMAGE template → caryanam_dealer_offers (existing — unchanged)
+                    result = whatsAppOfferClient.sendOfferTemplate(
+                            normalizedNumber,
+                            properties.offerTemplateName(),
+                            properties.offerLanguageCode(),
+                            event.metaImageHandle(),
+                            dealer.getOwnerName(),   // {{1}}
+                            safeOfferDetails,        // {{2}}
+                            safeBenefits,            // {{3}}
+                            safeContactInfo          // {{4}}
+                    );
+                }
 
                 if (result.success()) {
                     successCount.incrementAndGet();
@@ -182,7 +201,8 @@ public class DealerOfferBroadcastEventListener {
                                 : WhatsappMessageStatus.FAILED,
                         result.whatsappMessageId(),
                         result.responsePayload(),
-                        result.errorMessage()
+                        result.errorMessage(),
+                        event.templateType()
                 );
 
             } catch (Exception ex) {
@@ -200,7 +220,8 @@ public class DealerOfferBroadcastEventListener {
                         WhatsappMessageStatus.FAILED,
                         null,
                         null,
-                        ex.getMessage()
+                        ex.getMessage(),
+                        event.templateType()
                 );
             }
 
@@ -249,15 +270,21 @@ public class DealerOfferBroadcastEventListener {
             WhatsappMessageStatus status,
             String whatsappMessageId,
             String responsePayload,
-            String errorMessage) {
+            String errorMessage,
+            OfferTemplateType templateType) {
 
         try {
+            // Determine correct template name for logging based on template type
+            String resolvedTemplateName = (templateType == OfferTemplateType.VIDEO)
+                    ? properties.offerVideoTemplateName()
+                    : properties.offerTemplateName();
+
             WhatsappOfferMessageLog logEntry = WhatsappOfferMessageLog.builder()
                     .offerId(offerId)
                     .dealerId(dealerId)
                     .dealerName(dealerName)
                     .mobileNumber(mobileNumber)
-                    .templateName(properties.offerTemplateName())
+                    .templateName(resolvedTemplateName)
                     .status(status)
                     .whatsappMessageId(whatsappMessageId)
                     .metaImageHandle(metaImageHandle)

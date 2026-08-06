@@ -1,5 +1,7 @@
 package com.autohub.dto;
 
+import com.autohub.enums.OfferTemplateType;
+
 /**
  * Published after DealerOffer is saved to DB and transaction commits.
  * Carries the offerId so the async listener can reload full details
@@ -13,5 +15,6 @@ public record DealerOfferBroadcastEvent(
         String benefits,
         String contactInfo,
         String metaImageHandle,
-        int totalDealers
+        int totalDealers,
+        OfferTemplateType templateType  // NEW: IMAGE or VIDEO
 ) {}

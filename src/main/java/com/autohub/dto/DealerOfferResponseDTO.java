@@ -18,6 +18,8 @@ public class DealerOfferResponseDTO {
     private String benefits;
     private String contactInfo;
     private String imageUrl;
+    private String videoUrl;       // NEW: full URL for video offers (null for image)
+    private String templateType;   // NEW: "IMAGE" or "VIDEO"
     private String status;
     private Integer totalDealersTargeted;
     private Integer totalSentSuccess;

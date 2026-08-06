@@ -1,5 +1,6 @@
 package com.autohub.entity;
 
+import com.autohub.enums.OfferTemplateType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -45,6 +46,15 @@ public class DealerOffer {
     @Column(name = "meta_image_handle", length = 200)
     private String metaImageHandle; // returned by Meta media upload API
 
+    // ── NEW: Template type selector (IMAGE or VIDEO) ──
+    @Enumerated(EnumType.STRING)
+    @Column(name = "template_type", length = 10)
+    private OfferTemplateType templateType;
+
+    // ── NEW: Video URL for VIDEO offers (null for IMAGE offers) ──
+    @Column(name = "video_url")
+    private String videoUrl;
+
     @Column(name = "total_dealers_targeted")
     private Integer totalDealersTargeted;
 
@@ -65,5 +75,6 @@ public class DealerOffer {
         createdAt = LocalDateTime.now();
         if (totalSentSuccess == null) totalSentSuccess = 0;
         if (totalSentFailed == null) totalSentFailed = 0;
+        if (templateType == null) templateType = OfferTemplateType.IMAGE;
     }
 }
