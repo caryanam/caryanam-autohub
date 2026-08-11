@@ -67,4 +67,31 @@ public class RetryConfig {
         retryTemplate.setBackOffPolicy(backOffPolicy);
         return retryTemplate;
     }
+
+    /**
+     * Instagram publish worker uses WebClient (reactive), same transient
+     * retry policy as Facebook - network, timeout, 5xx, rate limit (429).
+     * Permanent failures (invalid token, permission missing, invalid image)
+     * are caught and classified inside InstagramGraphClient before ever
+     * reaching this template.
+     */
+    @Bean
+    public RetryTemplate instagramRetryTemplate() {
+        RetryTemplate retryTemplate = new RetryTemplate();
+
+        Map<Class<? extends Throwable>, Boolean> retryableExceptions = new HashMap<>();
+        retryableExceptions.put(WebClientResponseException.class, true);
+        retryableExceptions.put(WebClientRequestException.class, true);
+
+        RetryPolicy retryPolicy = new SimpleRetryPolicy(3, retryableExceptions, true);
+
+        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+        backOffPolicy.setInitialInterval(1000L);
+        backOffPolicy.setMultiplier(2.0);
+        backOffPolicy.setMaxInterval(10_000L);
+
+        retryTemplate.setRetryPolicy(retryPolicy);
+        retryTemplate.setBackOffPolicy(backOffPolicy);
+        return retryTemplate;
+    }
 }

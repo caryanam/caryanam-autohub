@@ -1,6 +1,7 @@
 package com.autohub;
 
 import com.autohub.dto.FacebookProperties;
+import com.autohub.dto.InstagramProperties;
 import com.autohub.dto.WhatsAppProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -11,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableConfigurationProperties({WhatsAppProperties.class, FacebookProperties.class})
+@EnableConfigurationProperties({WhatsAppProperties.class, FacebookProperties.class, InstagramProperties.class})
 @EnableAsync
 @EnableRetry
 @EnableScheduling
