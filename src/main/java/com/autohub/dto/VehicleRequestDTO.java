@@ -8,15 +8,15 @@ import lombok.Data;
 public class VehicleRequestDTO {
 
     @NotBlank(message = "Brand Name is Required")
-    @Size(min = 2, max = 100,message = "Brand Name must be between 10 and 1000 characters")
+    @Size(min = 2, max = 100,message = "Brand Name must be between 2 and 100 characters")
     private String brand;
 
     @NotBlank(message = "Model Name is Required")
-    @Size(min = 2, max = 100,message = "Model Name must be between 10 and 1000 characters")
+    @Size(min = 2, max = 100,message = "Model Name must be between 2 and 100 characters")
     private String model;
 
     @NotBlank(message = "Variant Name is Required")
-    @Size(min = 2, max = 100,message = "Variant Name must be between 10 and 1000 characters")
+    @Size(min = 1, max = 100,message = "Variant Name must be between 1 and 100 characters")
     private String variant;
 
     @NotNull(message = "Registration Year is Required")
@@ -42,8 +42,8 @@ public class VehicleRequestDTO {
     )
     private String fuelType;
 
-    @NotNull(message = "Kilometer Driven is Required")
-    @Positive(message = "Kilometer Driven must be greater than 0")
+    @NotNull(message = "Ownership Details is Required")
+    @Positive(message = "Ownership Details must be greater than 0")
     private int ownershipDetails;
 
 
@@ -62,8 +62,8 @@ public class VehicleRequestDTO {
     @NotBlank(message = "Vehicle Description is Required")
     @Size(
             min = 20,
-            max = 5000,
-            message = "Vehicle Description must be between 20 and 5000 characters"
+            max = 10000,
+            message = "Vehicle Description must be between 20 and 10000 characters"
     )
     private String vehicleDescription;
 
