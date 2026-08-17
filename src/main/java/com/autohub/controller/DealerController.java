@@ -1,6 +1,8 @@
 package com.autohub.controller;
 
+import com.autohub.configuration.ratelimit.RateLimit;
 import com.autohub.dto.*;
+import com.autohub.enums.RateLimitType;
 import com.autohub.service.DealerService;
 
 
@@ -77,6 +79,7 @@ public class DealerController {
 
 }
 
+    @RateLimit(capacity = 5, refillTokens = 5, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
     @PostMapping("/send-registration-otp")
     @Operation(summary = "Send Registration OTP API")
     public ResponseEntity<ResponseDto<String>> sendRegistrationOtp(@RequestParam String email) {
@@ -86,6 +89,7 @@ public class DealerController {
         );
     }
 
+    @RateLimit(capacity = 5, refillTokens = 5, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
     @PostMapping("/verify-registration-otp")
     @Operation(summary = "Verify Registration OTP API")
     public ResponseEntity<ResponseDto<String>> verifyRegistrationOtp(@RequestBody VerifyOtpDTO dto) {

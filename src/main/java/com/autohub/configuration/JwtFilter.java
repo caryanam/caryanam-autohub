@@ -78,7 +78,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 if (jwtUtil.validateToken(token, userDetails.getUsername())) {
 
-                    // 🔥 IMPORTANT
+                    //  IMPORTANT
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,   // ✅ CustomUserDetails object

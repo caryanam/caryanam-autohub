@@ -78,4 +78,14 @@ public class GlobalExceptionHandler {
                 )
         );
     }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ResponseDto<Void>> handleRateLimitExceeded(RateLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .header("X-RateLimit-Reset", String.valueOf(ex.getRetryAfterSeconds()))
+                .header("X-RateLimit-Limit", String.valueOf(ex.getLimit()))
+                .header("X-RateLimit-Remaining", "0")
+                .body(new ResponseDto<>(429, ex.getMessage(), null));
+    }
 }

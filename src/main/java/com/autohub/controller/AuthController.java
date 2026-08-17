@@ -1,6 +1,8 @@
 package com.autohub.controller;
 
+import com.autohub.configuration.ratelimit.RateLimit;
 import com.autohub.dto.*;
+import com.autohub.enums.RateLimitType;
 import com.autohub.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -199,6 +201,7 @@ public class AuthController {
     // FORGOT PASSWORD FOR ADMIN, DEALER, CUSTOMER API
     // =====================================================
 
+    @RateLimit(capacity = 5, refillTokens = 5, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
     @PostMapping("/send-otp")
     public ResponseEntity<String> sendOtp(
             @RequestParam String email) {
@@ -207,6 +210,7 @@ public class AuthController {
                 authService.sendOtp(email));
     }
 
+    @RateLimit(capacity = 10, refillTokens = 10, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
     @PostMapping("/verify-otp")
     public ResponseEntity<String> verifyOtp(
             @RequestBody VerifyOtpDTO dto) {
@@ -215,6 +219,7 @@ public class AuthController {
                 authService.verifyOtp(dto));
     }
 
+    @RateLimit(capacity = 5, refillTokens = 5, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(
             @RequestBody ResetPasswordDTO dto) {

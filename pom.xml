@@ -183,7 +183,19 @@
             <version>1.0.3</version>
         </dependency>
 
+        <!-- Bucket4j Token Bucket Rate Limiter -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
 
+        <!-- Caffeine High-Performance In-Memory Cache with TTL -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
 
     </dependencies>
 
