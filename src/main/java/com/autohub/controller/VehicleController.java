@@ -138,7 +138,7 @@ public class VehicleController {
 
     // ================= GET VEHICLE BY VEHICLE ID=================
 
-    @RateLimit(capacity = 60, refillTokens = 60, refillDurationInSeconds = 60, type = RateLimitType.IP)
+    @RateLimit(capacity = 15, refillTokens = 15, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
     @GetMapping("/{vehicleId}")
     @Operation(summary = "Get vehicle by vehicle id API")
     public ResponseEntity<ResponseDto<VehicleResponseDTO>> getVehicleById(@PathVariable Long vehicleId) {
@@ -156,7 +156,7 @@ public class VehicleController {
 
 
     // ================= GET ALL ACTIVE AND FEATURES AND NON-PREMIUM VEHICLE =================
-    @RateLimit(capacity = 60, refillTokens = 60, refillDurationInSeconds = 60, type = RateLimitType.IP)
+    @RateLimit(capacity = 15, refillTokens = 15, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
     @GetMapping("/non-premium/all-vehicle")
     public ResponseEntity<ResponseDto<List<VehicleResponseDTO>>> getAllNonPremiumVehicle(
             @RequestParam(required = false) Long customerId ) {
@@ -170,7 +170,7 @@ public class VehicleController {
     }
 
     // ================= GET ALL ACTIVE AND FEATURES AND PREMIUM VEHICLE =================
-    @RateLimit(capacity = 60, refillTokens = 60, refillDurationInSeconds = 60, type = RateLimitType.IP)
+    @RateLimit(capacity = 15, refillTokens = 15, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
     @GetMapping("/premium/all-vehicle")
     public ResponseEntity<ResponseDto<List<VehicleResponseDTO>>> getAllPremiumVehicle(
             @RequestParam(required = false) Long customerId
@@ -185,7 +185,7 @@ public class VehicleController {
     }
 
     // ================= GET ALL FEATURED ONLY 10 VEHICLE =================
-    @RateLimit(capacity = 60, refillTokens = 60, refillDurationInSeconds = 60, type = RateLimitType.IP)
+    @RateLimit(capacity = 15, refillTokens = 15, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
     @GetMapping("/featured")
     public ResponseEntity<List<VehicleResponseDTO>> getLatestFeaturedVehicles(@RequestParam(required = false) Long customerId) {
 
@@ -193,7 +193,7 @@ public class VehicleController {
         );
     }
     // ================= GET ALL LATEST ADDED ONLY 10 VEHICLE =================
-    @RateLimit(capacity = 60, refillTokens = 60, refillDurationInSeconds = 60, type = RateLimitType.IP)
+    @RateLimit(capacity = 15, refillTokens = 15, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
     @GetMapping("/latest-vehicles")
     public ResponseEntity<List<VehicleResponseDTO>> getLatestVehicles(@RequestParam(required = false) Long customerId) {
 
