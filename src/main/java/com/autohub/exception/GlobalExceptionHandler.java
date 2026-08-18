@@ -88,4 +88,9 @@ public class GlobalExceptionHandler {
                 .header("X-RateLimit-Remaining", "0")
                 .body(new ResponseDto<>(429, ex.getMessage(), null));
     }
+
+    @ExceptionHandler({BadRequestException.class, IllegalArgumentException.class})
+    public ResponseEntity<ResponseDto<Void>> handleBadRequestException(RuntimeException ex) {
+        return new ResponseEntity<>(new ResponseDto<>(400, ex.getMessage(), null), HttpStatus.BAD_REQUEST);
+    }
 }

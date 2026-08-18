@@ -485,7 +485,7 @@ public class DealerServiceImpl implements DealerService {
     @Override
     public String sendRegistrationOtp(String email) {
         if (dealerRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email already registered");
+            throw new com.autohub.exception.BadRequestException("Email already registered");
         }
 
         String otp = String.valueOf((int) ((Math.random() * 900000) + 100000));
@@ -493,7 +493,7 @@ public class DealerServiceImpl implements DealerService {
                 .orElse(new EmailVerification());
 
         if (verification.getOtpGeneratedTime() != null && verification.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+            throw new com.autohub.exception.BadRequestException("Please wait 1 minute before requesting a new OTP");
         }
 
         verification.setEmail(email);
@@ -510,19 +510,19 @@ public class DealerServiceImpl implements DealerService {
     @Override
     public String verifyRegistrationOtp(String email, String otp) {
         EmailVerification verification = emailVerificationRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("OTP not sent to this email"));
+                .orElseThrow(() -> new com.autohub.exception.BadRequestException("OTP not sent to this email"));
 
         if (verification.getIsVerified() != null && verification.getIsVerified()) {
-            throw new RuntimeException("Email is already verified");
+            throw new com.autohub.exception.BadRequestException("Email is already verified");
         }
 
         if (verification.getOtp() == null || !verification.getOtp().equals(otp)) {
-            throw new RuntimeException("Invalid OTP");
+            throw new com.autohub.exception.BadRequestException("Invalid OTP");
         }
 
         if (verification.getOtpGeneratedTime() == null ||
                 verification.getOtpGeneratedTime().plusMinutes(5).isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP has expired");
+            throw new com.autohub.exception.BadRequestException("OTP has expired");
         }
 
         verification.setIsVerified(true);
@@ -539,7 +539,7 @@ public class DealerServiceImpl implements DealerService {
     public String sendWhatsappOtp(String whatsappNumber) {
 
         if (dealerRepository.existsByWhatsapp(whatsappNumber)) {
-            throw new RuntimeException("WhatsApp number already registered");
+            throw new com.autohub.exception.BadRequestException("WhatsApp number already registered");
         }
 
         String otp = String.valueOf((int) ((Math.random() * 900000) + 100000));
@@ -551,7 +551,7 @@ public class DealerServiceImpl implements DealerService {
         // 1-minute cooldown between OTP requests
         if (verification.getOtpGeneratedTime() != null
                 && verification.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+            throw new com.autohub.exception.BadRequestException("Please wait 1 minute before requesting a new OTP");
         }
 
         verification.setWhatsapp(whatsappNumber);
@@ -572,19 +572,19 @@ public class DealerServiceImpl implements DealerService {
 
         DealerWhatsappOtpVerification verification = dealerWhatsappOtpRepository
                 .findByWhatsapp(whatsappNumber)
-                .orElseThrow(() -> new RuntimeException("OTP not sent to this WhatsApp number"));
+                .orElseThrow(() -> new com.autohub.exception.BadRequestException("OTP not sent to this WhatsApp number"));
 
         if (verification.getIsVerified() != null && verification.getIsVerified()) {
-            throw new RuntimeException("WhatsApp number is already verified");
+            throw new com.autohub.exception.BadRequestException("WhatsApp number is already verified");
         }
 
         if (verification.getOtp() == null || !verification.getOtp().equals(otp)) {
-            throw new RuntimeException("Invalid OTP");
+            throw new com.autohub.exception.BadRequestException("Invalid OTP");
         }
 
         if (verification.getOtpGeneratedTime() == null
                 || verification.getOtpGeneratedTime().plusMinutes(5).isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP has expired");
+            throw new com.autohub.exception.BadRequestException("OTP has expired");
         }
 
         verification.setIsVerified(true);

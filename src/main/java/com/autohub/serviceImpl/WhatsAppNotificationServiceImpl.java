@@ -233,7 +233,7 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
 
         if (normalizedMobile == null) {
             log.error("Cannot normalize dealer WhatsApp number for OTP: '{}'", whatsappNumber);
-            throw new RuntimeException("Invalid WhatsApp number format: " + whatsappNumber);
+            throw new com.autohub.exception.BadRequestException("Invalid WhatsApp number format: " + whatsappNumber);
         }
 
         log.info("Sending dealer registration OTP to WhatsApp: '{}' → '{}'",
@@ -256,13 +256,13 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
             } else {
                 log.error("WhatsApp OTP sending FAILED to [{}]: {}",
                         normalizedMobile, result.errorMessage());
-                throw new RuntimeException("Failed to send WhatsApp OTP: " + result.errorMessage());
+                throw new com.autohub.exception.BadRequestException("Failed to send WhatsApp OTP: " + result.errorMessage());
             }
 
         } catch (WhatsAppApiException ex) {
             log.error("WhatsApp OTP permanently failed for [{}]: {}",
                     normalizedMobile, ex.getMessage(), ex);
-            throw new RuntimeException("Failed to send WhatsApp OTP: " + ex.getMessage());
+            throw new com.autohub.exception.BadRequestException("Failed to send WhatsApp OTP: " + ex.getMessage());
 
         } catch (RuntimeException ex) {
             // Re-throw RuntimeExceptions (including ones we threw above)
@@ -271,7 +271,7 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
         } catch (Exception ex) {
             log.error("Unexpected error sending WhatsApp OTP to [{}]",
                     normalizedMobile, ex);
-            throw new RuntimeException("Failed to send WhatsApp OTP: " + ex.getMessage());
+            throw new com.autohub.exception.BadRequestException("Failed to send WhatsApp OTP: " + ex.getMessage());
         }
     }
 }
