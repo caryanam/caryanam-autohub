@@ -1,6 +1,7 @@
 package com.autohub.serviceImpl;
 
 import com.autohub.entity.Vehicle;
+import com.autohub.entity.Dealer;
 import com.autohub.service.InstagramCaptionGeneratorService;
 import com.autohub.util.SocialPostVehicleUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,9 +55,8 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
 
         // Call to action
         caption.append("\n\uD83D\uDC49 View details: ").append(buildVehicleUrl(vehicle)).append("\n\n");
-
-        //caption.append("📞 For more details and the dealer’s contact number, please check the comment below.\n");
-        caption.append("📞For more information about this vehicle, please check the comment below for the dealer’s contact details. 👇\n");
+        
+        caption.append("📞For more information about this vehicle, please check the comment below for the dealer’s contact details. 👇\n\n");
 
         caption.append("Thank you! 😊\n\n");
 
@@ -99,6 +99,26 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
 
     @Override
     public String generateComment(Vehicle vehicle) {
-        return generateCaption(vehicle);
+        StringBuilder comment = new StringBuilder();
+        NumberFormat priceFormat = NumberFormat.getInstance(new Locale("en", "IN"));
+
+        comment.append("Vehicle Details:\n\n");
+
+        comment.append("💰 Price: ₹").append(priceFormat.format(vehicle.getAskingPrice())).append("\n");
+        comment.append("📅 Year: ").append(vehicle.getRegistrationYear()).append("\n");
+        comment.append("🛣️ KM Driven: ").append(priceFormat.format(vehicle.getKilometerDriven())).append(" km\n");
+        comment.append("⛽ Fuel: ").append(vehicle.getFuelType()).append("\n");
+        comment.append("🔑 Ownership: ").append(ordinal(vehicle.getOwnershipDetails())).append(" Owner\n");
+        comment.append("📍 Location: ").append(vehicle.getCity()).append("\n");
+
+        if (vehicle.getDealer() != null) {
+            comment.append("🏢 Dealer Name: ").append(vehicle.getDealer().getBusinessName()).append("\n");
+        } else if (vehicle.getDealerContactName() != null && !vehicle.getDealerContactName().isBlank()) {
+            comment.append("🏢 Dealer Name: ").append(vehicle.getDealerContactName()).append("\n");
+        }
+
+        comment.append("\nView more details here: ").append(buildVehicleUrl(vehicle));
+
+        return comment.toString();
     }
 }
