@@ -15,10 +15,20 @@ public record TemplateComponent(
         @JsonProperty("type")
         String type,
 
+        @JsonProperty("sub_type")
+        String subType,
+
+        @JsonProperty("index")
+        String index,
+
         @JsonProperty("parameters")
         List<TemplateParameter> parameters
 ) {
     public static TemplateComponent body(List<TemplateParameter> parameters) {
-        return new TemplateComponent("body", parameters);
+        return new TemplateComponent("body", null, null, parameters);
+    }
+
+    public static TemplateComponent button(String subType, String index, List<TemplateParameter> parameters) {
+        return new TemplateComponent("button", subType, index, parameters);
     }
 }

@@ -57,6 +57,39 @@ public record WhatsAppTemplateRequest(
     }
 
     /**
+     * Builds a WhatsApp template request for the dealer OTP authentication template.
+     * Authentication templates require BODY (with OTP) + BUTTON (Copy Code) components.
+     */
+    public static WhatsAppTemplateRequest forDealerOtp(
+            String toMobileE164,
+            String templateName,
+            String languageCode,
+            String otpCode) {
+
+        // BODY component: {{1}} = the OTP code
+        TemplateComponent bodyComponent = TemplateComponent.body(
+                List.of(TemplateParameter.ofText(otpCode))
+        );
+
+        // BUTTON component: "Copy Code" button with OTP as URL suffix
+        TemplateComponent buttonComponent = TemplateComponent.button(
+                "url", "0",
+                List.of(TemplateParameter.ofText(otpCode))
+        );
+
+        return new WhatsAppTemplateRequest(
+                "whatsapp",
+                toMobileE164,
+                "template",
+                new TemplatePayload(
+                        templateName,
+                        new Language(languageCode),
+                        List.of(bodyComponent, buttonComponent)
+                )
+        );
+    }
+
+    /**
      * Helper to safely truncate strings to avoid exceeding Meta's 1024 char limit
      */
     private static String truncate(String text, int maxLength) {

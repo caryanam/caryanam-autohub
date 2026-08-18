@@ -57,6 +57,8 @@ public class SecurityConfig {
                                 "/api/dealer/register/**",
                                 "/api/dealer/send-registration-otp",
                                 "/api/dealer/verify-registration-otp",
+                                "/api/dealer/send-whatsapp-otp",
+                                "/api/dealer/verify-whatsapp-otp",
                                 "/api/vehicle/dealer/**",
                                 "/api/vehicle/**",
                                 "/api/vehicle/featured",

@@ -29,5 +29,8 @@ public interface DealerService {
 
     DashboardResponseDTO getDashboard(Long dealerId);
 
+    String sendWhatsappOtp(String whatsappNumber);
+
+    String verifyWhatsappOtp(String whatsappNumber, String otp);
 
 }

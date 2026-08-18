@@ -3,12 +3,14 @@ package com.autohub.serviceImpl;
 import com.autohub.dto.*;
 import com.autohub.emailservice.EmailService;
 import com.autohub.entity.Dealer;
+import com.autohub.entity.DealerWhatsappOtpVerification;
 import com.autohub.entity.Payment;
 import com.autohub.enums.*;
 import com.autohub.exception.ResourceNotFoundException;
 import com.autohub.entity.EmailVerification;
 import com.autohub.repository.*;
 import com.autohub.service.DealerService;
+import com.autohub.service.WhatsAppNotificationService;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -38,10 +40,12 @@ public class DealerServiceImpl implements DealerService {
 
     private final DealerRepository dealerRepository;
     private final EmailVerificationRepository emailVerificationRepository;
+    private final DealerWhatsappOtpRepository dealerWhatsappOtpRepository;
     private final VehicleRepository vehicleRepository;
     private final CustomerLeadRepository leadRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final WhatsAppNotificationService whatsAppNotificationService;
     private final ModelMapper modelMapper;
     private final VehicleViewRepository vehicleViewRepository;
     private final PaymentRepository paymentRepository;
@@ -115,6 +119,14 @@ public class DealerServiceImpl implements DealerService {
             dealer.setIsOtpVerified(true);
         } else {
             dealer.setIsOtpVerified(true);
+        }
+
+        // Verify WhatsApp OTP before allowing registration
+        DealerWhatsappOtpVerification whatsappOtp = dealerWhatsappOtpRepository
+                .findByWhatsapp(dto.getWhatsapp())
+                .orElseThrow(() -> new RuntimeException("WhatsApp number not verified. Please verify your WhatsApp number first."));
+        if (whatsappOtp.getIsVerified() == null || !whatsappOtp.getIsVerified()) {
+            throw new RuntimeException("WhatsApp number not verified. Please verify your WhatsApp number first.");
         }
 
         Dealer savedDealer = dealerRepository.save(dealer);
@@ -519,5 +531,67 @@ public class DealerServiceImpl implements DealerService {
         emailVerificationRepository.save(verification);
 
         return "Email verified successfully";
+    }
+
+    // ================= WHATSAPP OTP FOR DEALER REGISTRATION =================
+
+    @Override
+    public String sendWhatsappOtp(String whatsappNumber) {
+
+        if (dealerRepository.existsByWhatsapp(whatsappNumber)) {
+            throw new RuntimeException("WhatsApp number already registered");
+        }
+
+        String otp = String.valueOf((int) ((Math.random() * 900000) + 100000));
+
+        DealerWhatsappOtpVerification verification = dealerWhatsappOtpRepository
+                .findByWhatsapp(whatsappNumber)
+                .orElse(new DealerWhatsappOtpVerification());
+
+        // 1-minute cooldown between OTP requests
+        if (verification.getOtpGeneratedTime() != null
+                && verification.getOtpGeneratedTime().plusMinutes(1).isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Please wait 1 minute before requesting a new OTP");
+        }
+
+        verification.setWhatsapp(whatsappNumber);
+        verification.setOtp(otp);
+        verification.setOtpGeneratedTime(LocalDateTime.now());
+        verification.setIsVerified(false);
+
+        dealerWhatsappOtpRepository.save(verification);
+
+        // Send OTP via WhatsApp using otp_caryanam_verification template
+        whatsAppNotificationService.sendDealerRegistrationOtp(whatsappNumber, otp);
+
+        return "WhatsApp OTP sent successfully";
+    }
+
+    @Override
+    public String verifyWhatsappOtp(String whatsappNumber, String otp) {
+
+        DealerWhatsappOtpVerification verification = dealerWhatsappOtpRepository
+                .findByWhatsapp(whatsappNumber)
+                .orElseThrow(() -> new RuntimeException("OTP not sent to this WhatsApp number"));
+
+        if (verification.getIsVerified() != null && verification.getIsVerified()) {
+            throw new RuntimeException("WhatsApp number is already verified");
+        }
+
+        if (verification.getOtp() == null || !verification.getOtp().equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        if (verification.getOtpGeneratedTime() == null
+                || verification.getOtpGeneratedTime().plusMinutes(5).isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("OTP has expired");
+        }
+
+        verification.setIsVerified(true);
+        verification.setOtp("");
+        verification.setOtpGeneratedTime(LocalDateTime.now());
+        dealerWhatsappOtpRepository.save(verification);
+
+        return "WhatsApp number verified successfully";
     }
 }

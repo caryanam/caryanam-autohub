@@ -52,7 +52,14 @@ public record WhatsAppProperties(
         String birthdayTemplateName,
 
         @NotBlank(message = "whatsapp.birthday-language-code must be configured")
-        String birthdayLanguageCode
+        String birthdayLanguageCode,
+
+        // ── NEW fields for dealer registration WhatsApp OTP template ──
+        @NotBlank(message = "whatsapp.otp-template-name must be configured")
+        String otpTemplateName,
+
+        @NotBlank(message = "whatsapp.otp-language-code must be configured")
+        String otpLanguageCode
 
 ) {
     public String messagesEndpoint() {

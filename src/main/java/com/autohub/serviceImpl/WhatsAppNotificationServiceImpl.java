@@ -225,4 +225,53 @@ public class WhatsAppNotificationServiceImpl implements WhatsAppNotificationServ
                     event.leadId(), ex);
         }
     }
+
+    @Override
+    public void sendDealerRegistrationOtp(String whatsappNumber, String otp) {
+
+        String normalizedMobile = normalizeToE164(whatsappNumber);
+
+        if (normalizedMobile == null) {
+            log.error("Cannot normalize dealer WhatsApp number for OTP: '{}'", whatsappNumber);
+            throw new RuntimeException("Invalid WhatsApp number format: " + whatsappNumber);
+        }
+
+        log.info("Sending dealer registration OTP to WhatsApp: '{}' → '{}'",
+                whatsappNumber, normalizedMobile);
+
+        WhatsAppTemplateRequest request = WhatsAppTemplateRequest.forDealerOtp(
+                normalizedMobile,
+                properties.otpTemplateName(),
+                properties.otpLanguageCode(),
+                otp
+        );
+
+        try {
+            WhatsAppClient.WhatsAppApiCallResult result =
+                    whatsAppClient.sendTemplateMessage(request);
+
+            if (result.success()) {
+                log.info("WhatsApp OTP sent successfully to [{}], messageId=[{}]",
+                        normalizedMobile, result.whatsappMessageId());
+            } else {
+                log.error("WhatsApp OTP sending FAILED to [{}]: {}",
+                        normalizedMobile, result.errorMessage());
+                throw new RuntimeException("Failed to send WhatsApp OTP: " + result.errorMessage());
+            }
+
+        } catch (WhatsAppApiException ex) {
+            log.error("WhatsApp OTP permanently failed for [{}]: {}",
+                    normalizedMobile, ex.getMessage(), ex);
+            throw new RuntimeException("Failed to send WhatsApp OTP: " + ex.getMessage());
+
+        } catch (RuntimeException ex) {
+            // Re-throw RuntimeExceptions (including ones we threw above)
+            throw ex;
+
+        } catch (Exception ex) {
+            log.error("Unexpected error sending WhatsApp OTP to [{}]",
+                    normalizedMobile, ex);
+            throw new RuntimeException("Failed to send WhatsApp OTP: " + ex.getMessage());
+        }
+    }
 }

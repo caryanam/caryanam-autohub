@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -96,6 +96,28 @@ public class DealerController {
         String message = dealerService.verifyRegistrationOtp(dto.getEmail(), dto.getOtp());
         return ResponseEntity.ok(
                 new ResponseDto<>(200, "Registration OTP Verified", message)
+        );
+    }
+
+    // ================= WHATSAPP OTP =================
+
+    @RateLimit(capacity = 5, refillTokens = 5, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
+    @PostMapping("/send-whatsapp-otp")
+    @Operation(summary = "Send WhatsApp OTP for Dealer Registration")
+    public ResponseEntity<ResponseDto<String>> sendWhatsappOtp(@RequestParam String whatsapp) {
+        String message = dealerService.sendWhatsappOtp(whatsapp);
+        return ResponseEntity.ok(
+                new ResponseDto<>(200, "WhatsApp OTP Sent", message)
+        );
+    }
+
+    @RateLimit(capacity = 5, refillTokens = 5, refillDurationInSeconds = 600, type = RateLimitType.IP_AND_ENDPOINT)
+    @PostMapping("/verify-whatsapp-otp")
+    @Operation(summary = "Verify WhatsApp OTP for Dealer Registration")
+    public ResponseEntity<ResponseDto<String>> verifyWhatsappOtp(@RequestBody VerifyWhatsappOtpDTO dto) {
+        String message = dealerService.verifyWhatsappOtp(dto.getWhatsapp(), dto.getOtp());
+        return ResponseEntity.ok(
+                new ResponseDto<>(200, "WhatsApp OTP Verified", message)
         );
     }
 
