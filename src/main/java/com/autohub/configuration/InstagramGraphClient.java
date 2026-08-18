@@ -247,6 +247,47 @@ public class InstagramGraphClient {
         return "https://www.instagram.com/p/" + postId + "/";
     }
 
+    /**
+     * Posts a comment on an already-published Instagram media post.
+     * Uses: POST /{media-id}/comments?message=...&access_token=...
+     *
+     * This is best-effort — if the comment fails, it logs a warning but
+     * does NOT affect the overall publish status of the post.
+     *
+     * @param mediaPostId the Instagram post ID returned by media_publish
+     * @param commentText the comment body (vehicle details + link)
+     */
+    public void postComment(String mediaPostId, String commentText) {
+        try {
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("message", commentText);
+            form.add("access_token", properties.accessToken());
+
+            String responseJson = instagramWebClient.post()
+                    .uri("/{version}/{mediaId}/comments", properties.graphVersion(), mediaPostId)
+                    .body(BodyInserters.fromFormData(form))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            JsonNode root = objectMapper.readTree(responseJson);
+            String commentId = root.path("id").asText(null);
+
+            if (commentId != null && !commentId.isBlank()) {
+                log.info("Instagram comment posted successfully on post [{}]. commentId=[{}]",
+                        mediaPostId, commentId);
+            } else {
+                log.warn("Instagram comment API returned no id for post [{}]. Response: {}",
+                        mediaPostId, responseJson);
+            }
+
+        } catch (Exception ex) {
+            log.warn("Failed to post comment on Instagram post [{}]: {}. " +
+                     "The post itself was published successfully — comment is non-critical.",
+                    mediaPostId, ex.getMessage());
+        }
+    }
+
     public record InstagramPublishResult(
             boolean success,
             String instagramPostId,

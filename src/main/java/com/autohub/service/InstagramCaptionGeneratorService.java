@@ -11,4 +11,11 @@ import com.autohub.entity.Vehicle;
 public interface InstagramCaptionGeneratorService {
 
     String generateCaption(Vehicle vehicle);
+
+    /**
+     * Builds a comment to be posted on the vehicle's Instagram post.
+     * Contains full vehicle details and the vehicle listing URL so
+     * users can easily find it.
+     */
+    String generateComment(Vehicle vehicle);
 }

@@ -29,7 +29,7 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
         StringBuilder caption = new StringBuilder();
 
         // Title line with emoji
-        caption.append("\uD83D\uDE97 ")  // 🚗
+        caption.append("\uD83D\uDE97 ") // 🚗
                 .append(vehicle.getRegistrationYear())
                 .append(" ")
                 .append(vehicle.getBrand())
@@ -42,7 +42,8 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
         // Vehicle details with emojis
         caption.append("\uD83D\uDCB0 Price: ₹").append(priceFormat.format(vehicle.getAskingPrice())).append("\n");
         caption.append("\uD83D\uDCC5 Year: ").append(vehicle.getRegistrationYear()).append("\n");
-        caption.append("\uD83D\uDEE3\uFE0F KM Driven: ").append(priceFormat.format(vehicle.getKilometerDriven())).append(" km\n");
+        caption.append("\uD83D\uDEE3\uFE0F KM Driven: ").append(priceFormat.format(vehicle.getKilometerDriven()))
+                .append(" km\n");
         caption.append("⛽ Fuel: ").append(vehicle.getFuelType()).append("\n");
         caption.append("\uD83D\uDD11 Ownership: ").append(ordinal(vehicle.getOwnershipDetails())).append(" Owner\n");
         caption.append("\uD83D\uDCCD Location: ").append(vehicle.getCity()).append("\n");
@@ -53,6 +54,11 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
 
         // Call to action
         caption.append("\n\uD83D\uDC49 View details: ").append(buildVehicleUrl(vehicle)).append("\n\n");
+
+        //caption.append("📞 For more details and the dealer’s contact number, please check the comment below.\n");
+        caption.append("📞For more information about this vehicle, please check the comment below for the dealer’s contact details. 👇\n");
+
+        caption.append("Thank you! 😊\n\n");
 
         // Instagram-optimised hashtags (more than Facebook)
         caption.append(buildHashtags(vehicle));
@@ -73,8 +79,7 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
                 "#SecondHandCar", "#PreOwnedCars",
                 brandTag, modelTag, cityTag,
                 "#CarDeals", "#CarsOfInstagram",
-                "#BuyCar", "#CarForSale"
-        );
+                "#BuyCar", "#CarForSale");
     }
 
     private String ordinal(int n) {
@@ -90,5 +95,10 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
                 default -> n + "th";
             };
         };
+    }
+
+    @Override
+    public String generateComment(Vehicle vehicle) {
+        return generateCaption(vehicle);
     }
 }

@@ -110,6 +110,15 @@ public class InstagramPublishWorkerServiceImpl implements InstagramPublishWorker
 
             if (result.success()) {
                 markPublished(item, request, result, caption);
+
+                // Post a comment with full vehicle details + link (best-effort)
+                try {
+                    String commentText = captionGeneratorService.generateComment(vehicle);
+                    instagramGraphClient.postComment(result.instagramPostId(), commentText);
+                } catch (Exception commentEx) {
+                    log.warn("Comment on Instagram post [{}] failed (non-critical): {}",
+                            result.instagramPostId(), commentEx.getMessage());
+                }
             } else {
                 // Retry attempts already exhausted inside InstagramGraphClient's
                 // own retry template - this is a final transient failure for
