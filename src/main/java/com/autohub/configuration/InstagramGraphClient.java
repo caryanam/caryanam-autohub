@@ -258,7 +258,23 @@ public class InstagramGraphClient {
      * @param commentText the comment body (vehicle details + link)
      */
     public void postComment(String mediaPostId, String commentText) {
+        if (mediaPostId == null || mediaPostId.isBlank()) {
+            log.warn("Cannot post Instagram comment: mediaPostId is blank");
+            return;
+        }
+        if (commentText == null || commentText.isBlank()) {
+            log.warn("Cannot post Instagram comment: commentText is blank");
+            return;
+        }
+
         try {
+            // Small pause (1.5 seconds) to ensure newly published Instagram media is live and accepting comments
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+
             MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
             form.add("message", commentText);
             form.add("access_token", properties.accessToken());
@@ -281,10 +297,14 @@ public class InstagramGraphClient {
                         mediaPostId, responseJson);
             }
 
+        } catch (WebClientResponseException ex) {
+            String body = ex.getResponseBodyAsString();
+            String errorMsg = extractInstagramErrorMessage(body);
+            log.error("Instagram API error posting comment on post [{}]. Status=[{}], Error=[{}], Body=[{}]",
+                    mediaPostId, ex.getStatusCode(), errorMsg, body);
         } catch (Exception ex) {
-            log.warn("Failed to post comment on Instagram post [{}]: {}. " +
-                     "The post itself was published successfully — comment is non-critical.",
-                    mediaPostId, ex.getMessage());
+            log.error("Unexpected error posting comment on Instagram post [{}]: {}",
+                    mediaPostId, ex.getMessage(), ex);
         }
     }
 

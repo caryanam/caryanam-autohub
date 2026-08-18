@@ -47,11 +47,12 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
                 .append(" km\n");
         caption.append("⛽ Fuel: ").append(vehicle.getFuelType()).append("\n");
         caption.append("\uD83D\uDD11 Ownership: ").append(ordinal(vehicle.getOwnershipDetails())).append(" Owner\n");
-        caption.append("\uD83D\uDCCD Location: ").append(vehicle.getCity()).append("\n");
 
         if (vehicle.getDealer() != null) {
             caption.append("\uD83C\uDFEA Dealer: ").append(vehicle.getDealer().getBusinessName()).append("\n");
         }
+
+        caption.append("\uD83D\uDCCD Location: ").append(vehicle.getCity()).append("\n");
 
         // Call to action
         caption.append("\n\uD83D\uDC49 View details: ").append(buildVehicleUrl(vehicle)).append("\n\n");
@@ -104,14 +105,24 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
 
         comment.append("Vehicle Details:\n\n");
 
-        comment.append("💰 Price: ₹").append(priceFormat.format(vehicle.getAskingPrice())).append("\n");
-        comment.append("📅 Year: ").append(vehicle.getRegistrationYear()).append("\n");
-        comment.append("🛣️ KM Driven: ").append(priceFormat.format(vehicle.getKilometerDriven())).append(" km\n");
-        comment.append("⛽ Fuel: ").append(vehicle.getFuelType()).append("\n");
+        if (vehicle.getAskingPrice() != null) {
+            comment.append("💰 Price: ₹").append(priceFormat.format(vehicle.getAskingPrice())).append("\n");
+        }
+        if (vehicle.getRegistrationYear() != null) {
+            comment.append("📅 Year: ").append(vehicle.getRegistrationYear()).append("\n");
+        }
+        if (vehicle.getKilometerDriven() != null) {
+            comment.append("🛣️ KM Driven: ").append(priceFormat.format(vehicle.getKilometerDriven())).append(" km\n");
+        }
+        if (vehicle.getFuelType() != null && !vehicle.getFuelType().isBlank()) {
+            comment.append("⛽ Fuel: ").append(vehicle.getFuelType()).append("\n");
+        }
         comment.append("🔑 Ownership: ").append(ordinal(vehicle.getOwnershipDetails())).append(" Owner\n");
-        comment.append("📍 Location: ").append(vehicle.getCity()).append("\n");
+        if (vehicle.getCity() != null && !vehicle.getCity().isBlank()) {
+            comment.append("📍 Location: ").append(vehicle.getCity()).append("\n");
+        }
 
-        if (vehicle.getDealer() != null) {
+        if (vehicle.getDealer() != null && vehicle.getDealer().getBusinessName() != null) {
             comment.append("🏢 Dealer Name: ").append(vehicle.getDealer().getBusinessName()).append("\n");
         } else if (vehicle.getDealerContactName() != null && !vehicle.getDealerContactName().isBlank()) {
             comment.append("🏢 Dealer Name: ").append(vehicle.getDealerContactName()).append("\n");
