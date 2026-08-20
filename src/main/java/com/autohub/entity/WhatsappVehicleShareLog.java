@@ -70,6 +70,10 @@ public class WhatsappVehicleShareLog {
 
     // New fields — add inside the class body
     @Enumerated(EnumType.STRING)
+    @Column(name = "share_type", length = 10)
+    private com.autohub.enums.ShareMode shareType;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "delivery_status", length = 20)
     private WhatsappDeliveryStatus deliveryStatus;
 

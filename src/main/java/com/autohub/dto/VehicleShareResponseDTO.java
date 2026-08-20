@@ -14,6 +14,7 @@ public class VehicleShareResponseDTO {
     private String vehicleDisplayName;
     private String sentToNumber;
     private WhatsappMessageStatus status;
+    private com.autohub.enums.ShareMode shareType;
     private String whatsappMessageId;
     private String message;
     private LocalDateTime sharedAt;

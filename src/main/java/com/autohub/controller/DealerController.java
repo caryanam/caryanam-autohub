@@ -197,15 +197,15 @@ public class DealerController {
 
     @PostMapping("/vehicles/{vehicleId}/share-on-whatsapp")
     @PreAuthorize("hasRole('DEALER')")
-    public ResponseEntity<VehicleShareResponseDTO> shareVehicleOnWhatsApp(
+    public ResponseEntity<java.util.List<VehicleShareResponseDTO>> shareVehicleOnWhatsApp(
             @PathVariable Long vehicleId,
-            @RequestParam Long dealerId) {
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody com.autohub.dto.ShareVehicleRequestDTO request) {
 
         log.info("WhatsApp share request → vehicleId=[{}] dealerId=[{}]",
-                vehicleId, dealerId);
+                vehicleId, request.getDealerId());
 
-        VehicleShareResponseDTO response =
-                vehicleWhatsAppService.shareVehicleOnWhatsApp(vehicleId, dealerId);
+        java.util.List<VehicleShareResponseDTO> response =
+                vehicleWhatsAppService.shareVehicleOnWhatsApp(vehicleId, request);
 
         return ResponseEntity.ok(response);
     }

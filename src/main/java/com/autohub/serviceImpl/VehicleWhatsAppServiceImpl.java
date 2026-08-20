@@ -50,9 +50,28 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
     @Override
     @Transactional
     public VehicleShareResponseDTO shareVehicleOnWhatsApp(Long vehicleId, Long dealerId) {
+        // Backward compatibility: delegate to the new method with shareToSelf = true
+        com.autohub.dto.ShareVehicleRequestDTO request = new com.autohub.dto.ShareVehicleRequestDTO();
+        request.setDealerId(dealerId);
+        request.setShareToSelf(true);
+        List<VehicleShareResponseDTO> responses = shareVehicleOnWhatsApp(vehicleId, request);
+        return responses.isEmpty() ? null : responses.get(0);
+    }
 
-        log.info("Vehicle WhatsApp share initiated → vehicleId=[{}] dealerId=[{}]",
-                vehicleId, dealerId);
+    @Override
+    @Transactional
+    public List<VehicleShareResponseDTO> shareVehicleOnWhatsApp(Long vehicleId,
+            com.autohub.dto.ShareVehicleRequestDTO request) {
+
+        Long dealerId = request.getDealerId();
+        log.info(
+                "Vehicle WhatsApp share initiated → vehicleId=[{}] dealerId=[{}] shareToSelf=[{}] customerWhatsapp=[{}]",
+                vehicleId, dealerId, request.isShareToSelf(), request.getCustomerWhatsapp());
+
+        if (!request.isShareToSelf() && !StringUtils.hasText(request.getCustomerWhatsapp())) {
+            throw new RuntimeException(
+                    "Please select at least one recipient (share to self or provide customer WhatsApp number).");
+        }
 
         // ── Step 1: Validate vehicle exists and belongs to this dealer ──
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
@@ -64,29 +83,37 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
                     "Access denied. This vehicle does not belong to your account.");
         }
 
-        // ── Step 2: Validate dealer exists and has a WhatsApp number ──
+        // ── Step 2: Validate dealer exists ──
         Dealer dealer = dealerRepository.findById(dealerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Dealer not found with id: " + dealerId));
 
-        if (!StringUtils.hasText(dealer.getWhatsapp())) {
-            throw new RuntimeException(
-                    "Your WhatsApp number is not configured. " +
-                            "Please update your profile with a valid WhatsApp number.");
+        // Determine recipients
+        record Recipient(String number, com.autohub.enums.ShareMode shareType) {
+        }
+        java.util.List<Recipient> recipients = new java.util.ArrayList<>();
+
+        if (request.isShareToSelf()) {
+            if (!StringUtils.hasText(dealer.getWhatsapp())) {
+                throw new RuntimeException(
+                        "Your WhatsApp number is not configured. Please update your profile with a valid WhatsApp number.");
+            }
+            String dealerWhatsApp = normalizeToE164(dealer.getWhatsapp());
+            if (dealerWhatsApp == null) {
+                throw new RuntimeException(
+                        "Your WhatsApp number '" + dealer.getWhatsapp() + "' is in an unrecognized format.");
+            }
+            recipients.add(new Recipient(dealerWhatsApp, com.autohub.enums.ShareMode.SELF));
         }
 
-        // ── FIX: Normalize with bulletproof logic, throw if unrecognized ──
-        String dealerWhatsApp = normalizeToE164(dealer.getWhatsapp());
-
-        if (dealerWhatsApp == null) {
-            throw new RuntimeException(
-                    "Your WhatsApp number '" + dealer.getWhatsapp() + "' is in an " +
-                            "unrecognized format. Please update your profile with a valid " +
-                            "10-digit Indian mobile number.");
+        if (StringUtils.hasText(request.getCustomerWhatsapp())) {
+            String customerWhatsApp = normalizeToE164(request.getCustomerWhatsapp());
+            if (customerWhatsApp == null) {
+                throw new RuntimeException("Customer WhatsApp number '" + request.getCustomerWhatsapp()
+                        + "' is in an unrecognized format.");
+            }
+            recipients.add(new Recipient(customerWhatsApp, com.autohub.enums.ShareMode.CUSTOMER));
         }
-
-        log.info("Normalized dealer WhatsApp: '{}' → '{}'",
-                dealer.getWhatsapp(), dealerWhatsApp);
 
         // ── Step 3: Get first image of this vehicle from DB ──
         List<VehicleMedia> mediaList = mediaRepository.findByVehicleId(vehicleId);
@@ -117,8 +144,7 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
             mediaId = whatsAppVehicleClient.uploadVehicleImage(
                     imageBytes,
                     firstImage.getFileName(),
-                    mimeType
-            );
+                    mimeType);
 
         } catch (IOException ex) {
             log.error("Failed to read vehicle image from disk for vehicleId=[{}]: {}",
@@ -129,74 +155,78 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
 
         // ── Step 5: Build template variables from vehicle data ──
         String vehicleName = buildVehicleName(vehicle);
-        String price       = formatPrice(vehicle.getAskingPrice());
-        String regYear     = String.valueOf(vehicle.getRegistrationYear());
-        String fuelType    = vehicle.getFuelType();
-        String kmDriven    = formatKm(Math.toIntExact(vehicle.getKilometerDriven()));
-        String location    = vehicle.getCity();
-        String specs       = buildSpecifications(vehicle);
+        String price = formatPrice(vehicle.getAskingPrice());
+        String regYear = String.valueOf(vehicle.getRegistrationYear());
+        String fuelType = vehicle.getFuelType();
+        String kmDriven = formatKm(Math.toIntExact(vehicle.getKilometerDriven()));
+        String location = vehicle.getCity();
+        String specs = buildSpecifications(vehicle);
         String description = vehicle.getVehicleDescription();
 
-        log.info("Sending vehicle catalog → to=[{}] vehicle=[{}] mediaId=[{}]",
-                dealerWhatsApp, vehicleName, mediaId);
+        java.util.List<VehicleShareResponseDTO> responses = new java.util.ArrayList<>();
 
-        // ── Step 6: Send template message ──
-        WhatsAppVehicleClient.VehicleShareResult result =
-                whatsAppVehicleClient.sendVehicleCatalogTemplate(
-                        dealerWhatsApp,
-                        mediaId,
-                        vehicleName,
-                        price,
-                        regYear,
-                        fuelType,
-                        kmDriven,
-                        location,
-                        specs,
-                        description
-                );
+        // ── Step 6: Send template message to each recipient ──
+        for (Recipient recipient : recipients) {
+            log.info("Sending vehicle catalog → to=[{}] type=[{}] vehicle=[{}] mediaId=[{}]",
+                    recipient.number(), recipient.shareType(), vehicleName, mediaId);
 
-        // ── Step 7: Persist log regardless of outcome ──
-        WhatsappVehicleShareLog logEntry = WhatsappVehicleShareLog.builder()
-                .vehicleId(vehicleId)
-                .dealerId(dealerId)
-                .dealerName(dealer.getOwnerName())
-                .sentToNumber(dealerWhatsApp)
-                .vehicleDisplayName(vehicleName)
-                .templateName(properties.vehicleTemplateName())
-                .status(result.success()
-                        ? WhatsappMessageStatus.SUCCESS
-                        : WhatsappMessageStatus.FAILED)
-                .whatsappMessageId(result.whatsappMessageId())
-                .metaImageHandle(mediaId)
-                .responsePayload(result.responsePayload())
-                .errorMessage(result.errorMessage())
-                .build();
+            WhatsAppVehicleClient.VehicleShareResult result = whatsAppVehicleClient.sendVehicleCatalogTemplate(
+                    recipient.number(),
+                    mediaId,
+                    vehicleName,
+                    price,
+                    regYear,
+                    fuelType,
+                    kmDriven,
+                    location,
+                    specs,
+                    description);
 
-        WhatsappVehicleShareLog saved = shareLogRepository.save(logEntry);
+            // ── Step 7: Persist log regardless of outcome ──
+            WhatsappVehicleShareLog logEntry = WhatsappVehicleShareLog.builder()
+                    .vehicleId(vehicleId)
+                    .dealerId(dealerId)
+                    .dealerName(dealer.getOwnerName())
+                    .sentToNumber(recipient.number())
+                    .vehicleDisplayName(vehicleName)
+                    .templateName(properties.vehicleTemplateName())
+                    .status(result.success()
+                            ? WhatsappMessageStatus.SUCCESS
+                            : WhatsappMessageStatus.FAILED)
+                    .whatsappMessageId(result.whatsappMessageId())
+                    .metaImageHandle(mediaId)
+                    .responsePayload(result.responsePayload())
+                    .errorMessage(result.errorMessage())
+                    .shareType(recipient.shareType())
+                    .build();
 
-        if (result.success()) {
-            log.info("✓ Vehicle shared successfully → vehicleId=[{}] " +
-                            "dealerId=[{}] messageId=[{}]",
-                    vehicleId, dealerId, result.whatsappMessageId());
-        } else {
-            log.error("✗ Vehicle share failed → vehicleId=[{}] dealerId=[{}] error=[{}]",
-                    vehicleId, dealerId, result.errorMessage());
+            WhatsappVehicleShareLog saved = shareLogRepository.save(logEntry);
+
+            if (result.success()) {
+                log.info("✓ Vehicle shared successfully → vehicleId=[{}] " +
+                        "dealerId=[{}] type=[{}] messageId=[{}]",
+                        vehicleId, dealerId, recipient.shareType(), result.whatsappMessageId());
+            } else {
+                log.error("✗ Vehicle share failed → vehicleId=[{}] dealerId=[{}] type=[{}] error=[{}]",
+                        vehicleId, dealerId, recipient.shareType(), result.errorMessage());
+            }
+
+            responses.add(VehicleShareResponseDTO.builder()
+                    .logId(saved.getId())
+                    .vehicleId(vehicleId)
+                    .vehicleDisplayName(vehicleName)
+                    .sentToNumber(recipient.number())
+                    .status(saved.getStatus())
+                    .shareType(saved.getShareType())
+                    .whatsappMessageId(result.whatsappMessageId())
+                    .message(result.success()
+                            ? "Vehicle details sent to WhatsApp successfully!"
+                            : "Failed to send vehicle details. Error: " + result.errorMessage())
+                    .sharedAt(saved.getSharedAt())
+                    .build());
         }
 
-        return VehicleShareResponseDTO.builder()
-                .logId(saved.getId())
-                .vehicleId(vehicleId)
-                .vehicleDisplayName(vehicleName)
-                .sentToNumber(dealerWhatsApp)
-                .status(saved.getStatus())
-                .whatsappMessageId(result.whatsappMessageId())
-                .message(result.success()
-                        ? "Vehicle details sent to your WhatsApp successfully! " +
-                          "You can now forward it to your customer."
-                        : "Failed to send vehicle details. Please try again. " +
-                          "Error: " + result.errorMessage())
-                .sharedAt(saved.getSharedAt())
-                .build();
+        return responses;
     }
 
     @Override
@@ -251,11 +281,15 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
     private String buildSpecifications(Vehicle vehicle) {
         return "Ownership: " + nullSafe(String.valueOf(vehicle.getOwnershipDetails())) +
                 ", Category: " + nullSafe(
-                vehicle.getVehicleType() != null
-                        ? vehicle.getVehicleType().name() : null) +
+                        vehicle.getVehicleType() != null
+                                ? vehicle.getVehicleType().name()
+                                : null)
+                +
                 ", Status: " + nullSafe(
-                vehicle.getVehicleStatus() != null
-                        ? vehicle.getVehicleStatus().name() : null) +
+                        vehicle.getVehicleStatus() != null
+                                ? vehicle.getVehicleStatus().name()
+                                : null)
+                +
                 ", Finance: " + (vehicle.isFinanceAvailability() ? "Yes" : "No");
     }
 
@@ -268,14 +302,14 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
      * E.164 digits-only format Meta requires (e.g. 919876543210).
      *
      * Handles all formats found in practice:
-     *   9876543210        → 919876543210   (10 digit clean)
-     *   919876543210      → 919876543210   (already correct 12 digit)
-     *   +919876543210     → 919876543210   (+ prefix)
-     *   +91 9876543210    → 919876543210   (+ and space)
-     *   09876543210       → 919876543210   (leading 0 — ISD habit)
-     *   0091 9876543210   → 919876543210   (0091 prefix)
-     *   91 98765 43210    → 919876543210   (formatted with spaces)
-     *   910 9876543210    → 919876543210   (910 prefix edge case)
+     * 9876543210 → 919876543210 (10 digit clean)
+     * 919876543210 → 919876543210 (already correct 12 digit)
+     * +919876543210 → 919876543210 (+ prefix)
+     * +91 9876543210 → 919876543210 (+ and space)
+     * 09876543210 → 919876543210 (leading 0 — ISD habit)
+     * 0091 9876543210 → 919876543210 (0091 prefix)
+     * 91 98765 43210 → 919876543210 (formatted with spaces)
+     * 910 9876543210 → 919876543210 (910 prefix edge case)
      *
      * Returns null if the number cannot be normalized to a valid
      * 12-digit Indian mobile number — caller must throw or skip.
@@ -316,16 +350,19 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
 
         // Unrecognized format — return null so caller handles it cleanly
         log.warn("Cannot normalize WhatsApp number to E164: '{}' → " +
-                        "digits='{}' length={}",
+                "digits='{}' length={}",
                 rawNumber, digits, digits.length());
         return null;
     }
 
     private String resolveMimeType(String filename) {
-        if (filename == null) return "image/jpeg";
+        if (filename == null)
+            return "image/jpeg";
         String lower = filename.toLowerCase();
-        if (lower.endsWith(".png"))  return "image/png";
-        if (lower.endsWith(".webp")) return "image/webp";
+        if (lower.endsWith(".png"))
+            return "image/png";
+        if (lower.endsWith(".webp"))
+            return "image/webp";
         return "image/jpeg";
     }
 }
