@@ -4,8 +4,18 @@ package com.autohub.dto;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateDealerProfileRequestDTO {
+
+    @NotBlank(message = "Dealer Mobile Number is Required")
+    @Pattern(
+            regexp = "^[6-9]\\d{9}$",
+            message = "Mobile Number must be a valid 10-digit Indian mobile number"
+    )
+    private String mobile;
 
     @NotBlank(message = "Business Name is Required")
     @Size(

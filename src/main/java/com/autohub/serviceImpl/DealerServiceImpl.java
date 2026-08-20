@@ -323,6 +323,11 @@ public class DealerServiceImpl implements DealerService {
         dealer.setPinCode(dto.getPinCode());
         dealer.setState(dto.getState());
 
+        // Update Dealer Mobile
+        if (dto.getMobile() != null && !dto.getMobile().isEmpty()) {
+            dealer.setDealerMobile(dto.getMobile());
+        }
+
         if (dealerLogo != null && !dealerLogo.isEmpty()) {
             if (!dealerLogo.getContentType().startsWith("image/")) {
                 throw new RuntimeException("Only image files are allowed");
