@@ -313,8 +313,10 @@ public class DealerServiceImpl implements DealerService {
 
         Dealer dealer = dealerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Dealer Not Found"));
         dealer.setBusinessName(dto.getBusinessName());
+        dealer.setOwnerName(dto.getOwnerName());
         dealer.setWhatsapp(dto.getWhatsapp());
         dealer.setExecutiveMobile(dto.getExecutiveMobile());
+        dealer.setEmail(dto.getEmail());
         dealer.setDateOfBirth(dto.getDateOfBirth());
         dealer.setAddress(dto.getAddress());
         dealer.setCity(dto.getCity());

@@ -15,6 +15,18 @@ public class UpdateDealerProfileRequestDTO {
     )
     private String businessName;
 
+    @NotBlank(message = "Owner Name is Required")
+    @Size(
+            min = 3,
+            max = 100,
+            message = "Owner Name must be between 3 and 100 characters"
+    )
+    @Pattern(
+            regexp = "^[A-Za-z ]+$",
+            message = "Owner Name must contain only alphabets and spaces"
+    )
+    private String ownerName;
+
     @Past(message = "Date of Birth must be in the past")
     @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private java.time.LocalDate dateOfBirth;
@@ -26,6 +38,12 @@ public class UpdateDealerProfileRequestDTO {
     )
     private String whatsapp;
 
+    @NotBlank(message = "Email is Required")
+    @Pattern(
+            regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$",
+            message = "Please provide a valid email address (e.g., example@domain.com)"
+    )
+    private String email;
 
     @Pattern(
             regexp = "^$|^[6-9]\\d{9}$",
