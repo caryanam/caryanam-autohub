@@ -11,6 +11,10 @@ import com.autohub.repository.DealerOfferRepository;
 import com.autohub.repository.WhatsappMessageLogRepository;
 import com.autohub.repository.WhatsappOfferMessageLogRepository;
 import com.autohub.repository.WhatsappVehicleShareLogRepository;
+import com.autohub.repository.DealerRepository;
+import com.autohub.repository.CustomerLeadRepository;
+import com.autohub.entity.Dealer;
+import com.autohub.entity.CustomerLead;
 import com.autohub.service.WhatsappDashboardService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -28,6 +35,8 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
     private final WhatsappVehicleShareLogRepository vehicleShareLogRepository;
     private final com.autohub.repository.WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository;
     private final DealerOfferRepository dealerOfferRepository;
+    private final DealerRepository dealerRepository;
+    private final CustomerLeadRepository customerLeadRepository;
     private final WhatsAppProperties properties;
 
     public WhatsappDashboardServiceImpl(
@@ -36,12 +45,16 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
             WhatsappVehicleShareLogRepository vehicleShareLogRepository,
             com.autohub.repository.WhatsappBirthdayMessageLogRepository birthdayMessageLogRepository,
             DealerOfferRepository dealerOfferRepository,
+            DealerRepository dealerRepository,
+            CustomerLeadRepository customerLeadRepository,
             WhatsAppProperties properties) {
         this.messageLogRepository = messageLogRepository;
         this.offerMessageLogRepository = offerMessageLogRepository;
         this.vehicleShareLogRepository = vehicleShareLogRepository;
         this.birthdayMessageLogRepository = birthdayMessageLogRepository;
         this.dealerOfferRepository = dealerOfferRepository;
+        this.dealerRepository = dealerRepository;
+        this.customerLeadRepository = customerLeadRepository;
         this.properties = properties;
     }
 
@@ -399,13 +412,33 @@ public class WhatsappDashboardServiceImpl implements WhatsappDashboardService {
     @Override
     @Transactional(readOnly = true)
     public List<WhatsappMessageLog> getLeadLogs() {
-        return messageLogRepository.findAll().stream()
+        List<WhatsappMessageLog> logs = messageLogRepository.findAll().stream()
                 .sorted((a, b) -> {
                     if (a.getCreatedAt() == null) return 1;
                     if (b.getCreatedAt() == null) return -1;
                     return b.getCreatedAt().compareTo(a.getCreatedAt());
                 })
                 .toList();
+
+        if (logs.isEmpty()) {
+            return logs;
+        }
+
+        Set<Long> dealerIds = logs.stream().map(WhatsappMessageLog::getDealerId).collect(Collectors.toSet());
+        Set<Long> leadIds = logs.stream().map(WhatsappMessageLog::getLeadId).collect(Collectors.toSet());
+
+        Map<Long, String> dealerNames = dealerRepository.findAllById(dealerIds).stream()
+                .collect(Collectors.toMap(Dealer::getId, Dealer::getBusinessName, (v1, v2) -> v1));
+        
+        Map<Long, String> leadNames = customerLeadRepository.findAllById(leadIds).stream()
+                .collect(Collectors.toMap(CustomerLead::getId, CustomerLead::getCustomerName, (v1, v2) -> v1));
+
+        logs.forEach(log -> {
+            log.setDealerName(dealerNames.get(log.getDealerId()));
+            log.setRecipientName(leadNames.get(log.getLeadId()));
+        });
+
+        return logs;
     }
 
     @Override

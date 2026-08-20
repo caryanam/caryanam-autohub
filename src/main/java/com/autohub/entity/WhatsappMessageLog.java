@@ -53,6 +53,12 @@ public class WhatsappMessageLog {
     @Column(name = "request_payload", columnDefinition = "TEXT")
     private String requestPayload;
 
+    @Transient
+    private String dealerName;
+
+    @Transient
+    private String recipientName;
+
     // New fields — add inside the class body
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_status", length = 20)

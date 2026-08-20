@@ -97,4 +97,8 @@ public class WhatsappVehicleShareLog {
         }
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public LocalDateTime getCreatedAt() {
+        return this.sharedAt;
+    }
 }

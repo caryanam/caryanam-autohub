@@ -217,6 +217,7 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
                     .vehicleDisplayName(vehicleName)
                     .sentToNumber(recipient.number())
                     .status(saved.getStatus())
+                    .deliveryStatus(saved.getDeliveryStatus())
                     .shareType(saved.getShareType())
                     .whatsappMessageId(result.whatsappMessageId())
                     .message(result.success()
@@ -240,6 +241,7 @@ public class VehicleWhatsAppServiceImpl implements VehicleWhatsAppService {
                         .vehicleDisplayName(log.getVehicleDisplayName())
                         .sentToNumber(log.getSentToNumber())
                         .status(log.getStatus())
+                        .deliveryStatus(log.getDeliveryStatus())
                         .whatsappMessageId(log.getWhatsappMessageId())
                         .sharedAt(log.getSharedAt())
                         .message(log.getStatus() == WhatsappMessageStatus.SUCCESS
