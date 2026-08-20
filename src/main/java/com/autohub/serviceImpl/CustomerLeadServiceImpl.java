@@ -193,6 +193,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
                     "No leads found for dealer id : " + dealerId);
         }
         return leads.stream()
+                .sorted((a, b) -> b.getId().compareTo(a.getId()))
                 .map(lead -> CustomerLeadResponseDTO.builder()
                         .id(lead.getId())
                         .uniqueLeadId(lead.getUniqueLeadId())

@@ -107,6 +107,7 @@ public class AdminServiceImpl implements AdminService {
         List<CustomerLead> allLeads = customerLeadRepository.findAll();
 
         return allLeads.stream()
+                .sorted((a, b) -> b.getId().compareTo(a.getId()))
                 .map(lead -> AllCustomerLeadResponseDTO.builder()
                         .id(lead.getId())
                         .uniqueLeadId(lead.getUniqueLeadId())
