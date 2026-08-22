@@ -105,6 +105,11 @@ public class JwtFilter extends OncePerRequestFilter {
                 response.setContentType("application/json");
                 response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Invalid token\"}");
                 return;
+            } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"User not found or username changed. Please login again.\"}");
+                return;
             }
         }
 
