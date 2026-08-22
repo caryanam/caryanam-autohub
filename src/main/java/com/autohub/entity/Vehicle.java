@@ -32,7 +32,7 @@ public class Vehicle {
     @Column(nullable = false)
     private String model;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String variant;
 
     @Column(nullable = false)

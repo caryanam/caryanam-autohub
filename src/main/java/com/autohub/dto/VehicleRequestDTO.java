@@ -15,8 +15,7 @@ public class VehicleRequestDTO {
     @Size(min = 2, max = 100,message = "Model Name must be between 2 and 100 characters")
     private String model;
 
-    @NotBlank(message = "Variant Name is Required")
-    @Size(min = 1, max = 100,message = "Variant Name must be between 1 and 100 characters")
+    @Size(max = 100, message = "Variant Name must be up to 100 characters")
     private String variant;
 
     @NotNull(message = "Registration Year is Required")

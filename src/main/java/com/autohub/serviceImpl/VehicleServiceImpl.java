@@ -138,10 +138,10 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
 
-        //Upload Image Validation Minimum 10 image required to add vehicle
-        if (images == null || images.size() < 10) {
+        //Upload Image Validation Minimum 5 images required to add vehicle
+        if (images == null || images.size() < 5) {
             throw new RuntimeException(
-                    "Minimum 10 images are required");
+                    "Minimum 5 images are required");
         }
 
 
@@ -164,7 +164,7 @@ public class VehicleServiceImpl implements VehicleService {
                 .dealer(dealer)
                 .brand(vehicleRequestDTO.getBrand())
                 .model(vehicleRequestDTO.getModel())
-                .variant(vehicleRequestDTO.getVariant())
+                .variant(vehicleRequestDTO.getVariant() != null ? vehicleRequestDTO.getVariant() : "")
                 .registrationYear(vehicleRequestDTO.getRegistrationYear())
                 .fuelType(vehicleRequestDTO.getFuelType().trim().toUpperCase())
                 .kilometerDriven(vehicleRequestDTO.getKilometerDriven())
@@ -445,7 +445,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         vehicle.setBrand(request.getBrand());
         vehicle.setModel(request.getModel());
-        vehicle.setVariant(request.getVariant());
+        vehicle.setVariant(request.getVariant() != null ? request.getVariant() : "");
         vehicle.setRegistrationYear(request.getRegistrationYear());
         vehicle.setFuelType(request.getFuelType().trim().toUpperCase());
         vehicle.setKilometerDriven(request.getKilometerDriven());
