@@ -7,8 +7,18 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
+
 @Repository
 public interface SocialPostBatchItemRepository extends JpaRepository<SocialPostBatchItem, Long> {
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM SocialPostBatchItem i WHERE i.vehicle.id = :vehicleId")
+    void deleteByVehicleId(@Param("vehicleId") Long vehicleId);
 
     List<SocialPostBatchItem> findByBatch_IdOrderByIdAsc(Long batchId);
 

@@ -31,9 +31,14 @@ public class VehicleServiceImpl implements VehicleService {
    private final DealerRepository dealerRepository;
    private final VehicleMediaRepository mediaRepository;
    private final CustomerLeadRepository leadRepository;
-   private final PaymentRepository paymentRepository;
-   private final VehicleViewRepository vehicleViewRepository;
-   private final WishlistRepository wishlistRepository;
+    private final PaymentRepository paymentRepository;
+    private final VehicleViewRepository vehicleViewRepository;
+    private final WishlistRepository wishlistRepository;
+    private final InstagramPostBatchItemRepository instagramPostBatchItemRepository;
+    private final SocialPostBatchItemRepository socialPostBatchItemRepository;
+    private final VehicleInstagramPostRequestRepository vehicleInstagramPostRequestRepository;
+    private final VehicleSocialPostRequestRepository vehicleSocialPostRequestRepository;
+    private final SocialVisitLogRepository socialVisitLogRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -506,6 +511,14 @@ public class VehicleServiceImpl implements VehicleService {
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Vehicle not found with id: " + id));
+
+        // Delete dependent records using JPA repositories to prevent foreign key constraint violations
+        instagramPostBatchItemRepository.deleteByVehicleId(vehicle.getId());
+        socialPostBatchItemRepository.deleteByVehicleId(vehicle.getId());
+        vehicleInstagramPostRequestRepository.deleteByVehicleId(vehicle.getId());
+        vehicleSocialPostRequestRepository.deleteByVehicleId(vehicle.getId());
+        socialVisitLogRepository.deleteByVehicleId(vehicle.getId());
+        wishlistRepository.deleteByVehicleId(vehicle.getId());
 
         leadRepository.deleteLeadsByVehicleId(vehicle.getId());
 
