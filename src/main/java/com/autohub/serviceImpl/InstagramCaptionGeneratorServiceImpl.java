@@ -50,6 +50,9 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
 
         if (vehicle.getDealer() != null) {
             caption.append("\uD83C\uDFEA Dealer: ").append(vehicle.getDealer().getBusinessName()).append("\n");
+            if (vehicle.getDealer().getDealerMobile() != null) {
+                caption.append("\uD83D\uDCF1 Contact: ").append(vehicle.getDealer().getDealerMobile()).append("\n");
+            }
         }
 
         caption.append("\uD83D\uDCCD Location: ").append(vehicle.getCity()).append("\n");
@@ -124,8 +127,14 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
 
         if (vehicle.getDealer() != null && vehicle.getDealer().getBusinessName() != null) {
             comment.append("🏢 Dealer Name: ").append(vehicle.getDealer().getBusinessName()).append("\n");
+            if (vehicle.getDealer().getDealerMobile() != null) {
+                comment.append("\uD83D\uDCF1 Contact: ").append(vehicle.getDealer().getDealerMobile()).append("\n");
+            }
         } else if (vehicle.getDealerContactName() != null && !vehicle.getDealerContactName().isBlank()) {
             comment.append("🏢 Dealer Name: ").append(vehicle.getDealerContactName()).append("\n");
+            if (vehicle.getDealerContactNumber() != null && !vehicle.getDealerContactNumber().isBlank()) {
+                comment.append("\uD83D\uDCF1 Contact: ").append(vehicle.getDealerContactNumber()).append("\n");
+            }
         }
 
         comment.append("\nView more details here: ").append(buildVehicleUrl(vehicle));
