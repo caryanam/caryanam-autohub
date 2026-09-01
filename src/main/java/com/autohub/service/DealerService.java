@@ -32,5 +32,4 @@ public interface DealerService {
     String sendWhatsappOtp(String whatsappNumber);
 
     String verifyWhatsappOtp(String whatsappNumber, String otp);
-
 }

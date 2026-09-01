@@ -394,6 +394,22 @@ public class AdminServiceImpl implements AdminService {
         entityManager.createQuery("DELETE FROM VehicleSocialPostRequest v WHERE v.dealer.id = :dealerId")
                 .setParameter("dealerId", dealerId).executeUpdate();
 
+        // Delete from VehicleInstagramPostRequest
+        entityManager.createQuery("DELETE FROM VehicleInstagramPostRequest v WHERE v.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from InstagramPostBatchItem (via InstagramPostBatch)
+        entityManager.createQuery("DELETE FROM InstagramPostBatchItem i WHERE i.batch IN (SELECT b FROM InstagramPostBatch b WHERE b.dealer.id = :dealerId)")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from InstagramPostBatch
+        entityManager.createQuery("DELETE FROM InstagramPostBatch b WHERE b.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
+        // Delete from SocialVisitLog
+        entityManager.createQuery("DELETE FROM SocialVisitLog v WHERE v.dealer.id = :dealerId")
+                .setParameter("dealerId", dealerId).executeUpdate();
+
         // Delete from VehicleView
         entityManager.createQuery("DELETE FROM VehicleView v WHERE v.dealer.id = :dealerId")
                 .setParameter("dealerId", dealerId).executeUpdate();
