@@ -41,6 +41,9 @@ public interface VehicleInstagramPostRequestRepository extends JpaRepository<Veh
      */
     java.util.Optional<VehicleInstagramPostRequest> findTopByVehicle_IdOrderByCreatedAtDesc(Long vehicleId);
 
+    java.util.Optional<VehicleInstagramPostRequest> findTopByVehicle_IdAndPublishStatusOrderByCreatedAtDesc(Long vehicleId, SocialPostPublishStatus publishStatus);
+
+
     /**
      * Locks the selected rows for the duration of the bulk-approve
      * transaction so two concurrent admin actions cannot approve/publish

@@ -53,7 +53,7 @@ public class CaptionGeneratorServiceImpl implements CaptionGeneratorService {
     }
 
     private String buildVehicleUrl(Vehicle vehicle) {
-        return SocialPostVehicleUtil.buildVehicleListingUrl(websiteBaseUrl, vehicle.getId());
+        return SocialPostVehicleUtil.buildVehicleListingUrl(websiteBaseUrl, vehicle.getId(), "facebook");
     }
 
     private String buildHashtags(Vehicle vehicle) {

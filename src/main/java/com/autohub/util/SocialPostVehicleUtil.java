@@ -37,10 +37,10 @@ public final class SocialPostVehicleUtil {
     }
 
     /** Builds the customer-facing "view this vehicle" link used in captions. */
-    public static String buildVehicleListingUrl(String websiteBaseUrl, Long vehicleId) {
+    public static String buildVehicleListingUrl(String websiteBaseUrl, Long vehicleId, String source) {
         String base = websiteBaseUrl.endsWith("/")
                 ? websiteBaseUrl.substring(0, websiteBaseUrl.length() - 1)
                 : websiteBaseUrl;
-        return base + "/car/" + vehicleId;
+        return base + "/car/" + vehicleId + "?source=" + source;
     }
 }

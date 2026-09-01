@@ -43,6 +43,8 @@ public interface VehicleSocialPostRequestRepository extends JpaRepository<Vehicl
      */
     java.util.Optional<VehicleSocialPostRequest> findTopByVehicle_IdOrderByCreatedAtDesc(Long vehicleId);
 
+    java.util.Optional<VehicleSocialPostRequest> findTopByVehicle_IdAndPublishStatusOrderByCreatedAtDesc(Long vehicleId, SocialPostPublishStatus publishStatus);
+
     /**
      * Locks the selected rows for the duration of the bulk-approve
      * transaction ("Lock Requests" step) so two concurrent admin actions

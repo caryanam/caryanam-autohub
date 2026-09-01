@@ -68,7 +68,7 @@ public class InstagramCaptionGeneratorServiceImpl implements InstagramCaptionGen
     }
 
     private String buildVehicleUrl(Vehicle vehicle) {
-        return SocialPostVehicleUtil.buildVehicleListingUrl(websiteBaseUrl, vehicle.getId());
+        return SocialPostVehicleUtil.buildVehicleListingUrl(websiteBaseUrl, vehicle.getId(), "instagram");
     }
 
     private String buildHashtags(Vehicle vehicle) {

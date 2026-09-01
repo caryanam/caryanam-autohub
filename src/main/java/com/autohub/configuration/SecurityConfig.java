@@ -71,6 +71,7 @@ public class SecurityConfig {
                                 "/api/dealer/dashboard/**",
                                 "/uploads/**",
                                 "/api/olx/**",
+                                "/api/social-tracking/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
