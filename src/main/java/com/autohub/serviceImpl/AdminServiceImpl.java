@@ -117,6 +117,7 @@ public class AdminServiceImpl implements AdminService {
                         .dealerName(lead.getDealer().getOwnerName())
                         .leadStatus(lead.getLeadStatus())
                         .enquiryDate(lead.getEnquiryDate())
+                        .socialMediaPlatform(lead.getSocialMediaPlatform())
                         .vehicleName(lead.getVehicle().getBrand()+" "+lead.getVehicle().getBrand()+" "+lead.getVehicle().getRegistrationYear())
                         .build())
                 .toList();
@@ -434,5 +435,16 @@ public class AdminServiceImpl implements AdminService {
 
         // Delete the dealer
         dealerRepository.delete(dealer);
+    }
+
+    @Override
+    @Transactional
+    public void applyFreeTrialToAllDealers() {
+        List<Dealer> allDealers = dealerRepository.findAll();
+        java.time.LocalDateTime oneMonthFromNow = java.time.LocalDateTime.now().plusMonths(1);
+        for (Dealer dealer : allDealers) {
+            dealer.setFreeTrialEndDate(oneMonthFromNow);
+        }
+        dealerRepository.saveAll(allDealers);
     }
 }

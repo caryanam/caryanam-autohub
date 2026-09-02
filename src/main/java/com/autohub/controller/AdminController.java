@@ -142,6 +142,14 @@ public class AdminController {
         return ResponseEntity.ok(new ResponseDto<>(200, "Dealer and all associated data deleted successfully", null));
     }
 
+    // ================= APPLY FREE TRIAL =================
+    @PostMapping("/apply-free-trial")
+    @Operation(summary = "Apply 1 month free trial to all dealers")
+    public ResponseEntity<ResponseDto<String>> applyFreeTrialToAllDealers() {
+        adminService.applyFreeTrialToAllDealers();
+        return ResponseEntity.ok(new ResponseDto<>(200, "1 month free trial applied to all dealers successfully", null));
+    }
+
 }
 
 

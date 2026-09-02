@@ -41,5 +41,8 @@ public class CustomerLead {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @Enumerated(EnumType.STRING)
+    private com.autohub.enums.SocialMediaPlatform socialMediaPlatform;
+
 
 }

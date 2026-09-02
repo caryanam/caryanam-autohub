@@ -33,4 +33,6 @@ public class AllCustomerLeadResponseDTO {
     private CustomerLeadStatus leadStatus;
 
     private String vehicleName;
+
+    private com.autohub.enums.SocialMediaPlatform socialMediaPlatform;
 }

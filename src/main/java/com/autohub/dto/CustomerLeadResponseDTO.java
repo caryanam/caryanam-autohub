@@ -34,4 +34,6 @@ public class CustomerLeadResponseDTO {
     private Long dealer;
 
     private Customer customer;
+
+    private com.autohub.enums.SocialMediaPlatform socialMediaPlatform;
 }

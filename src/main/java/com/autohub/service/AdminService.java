@@ -41,4 +41,7 @@ public interface AdminService {
     //DELETE DEALER
     void deleteDealer(Long dealerId);
 
+    //APPLY FREE TRIAL
+    void applyFreeTrialToAllDealers();
+
 }

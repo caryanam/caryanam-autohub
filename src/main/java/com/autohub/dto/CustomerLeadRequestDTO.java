@@ -15,4 +15,6 @@ public class CustomerLeadRequestDTO {
     @NotBlank(message = "Customer City is Required")
     private String customerCity;
 
+    @jakarta.validation.constraints.NotNull(message = "Social Media Platform is Required")
+    private com.autohub.enums.SocialMediaPlatform socialMediaPlatform;
 }

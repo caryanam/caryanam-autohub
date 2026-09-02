@@ -81,6 +81,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
         lead.setVehicle(vehicle);
         lead.setDealer(dealer);
         lead.setCustomer(customer);
+        lead.setSocialMediaPlatform(leadRequestDTO.getSocialMediaPlatform());
 
         CustomerLead saved = leadRepository.save(lead);
 
@@ -112,6 +113,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
                 .enquiryDate(saved.getEnquiryDate())
                 .dealer(saved.getDealer().getId())
                 .customer(saved.getCustomer())
+                .socialMediaPlatform(saved.getSocialMediaPlatform())
                 .build();
     }
 
@@ -204,6 +206,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
                         .dealer(lead.getDealer().getId())
                         .leadStatus(lead.getLeadStatus())
                         .enquiryDate(lead.getEnquiryDate())
+                        .socialMediaPlatform(lead.getSocialMediaPlatform())
                         .build())
                 .toList();
 
@@ -257,6 +260,7 @@ public class CustomerLeadServiceImpl implements CustomerLeadService {
                 .enquiryDate(saved.getEnquiryDate())
                 .dealer(saved.getDealer().getId())
                 .leadStatus(saved.getLeadStatus())
+                .socialMediaPlatform(saved.getSocialMediaPlatform())
                 .build();
     }
 
