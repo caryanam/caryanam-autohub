@@ -1,1 +1,0 @@
-ALTER TABLE `Customer-Leads` MODIFY COLUMN social_media_platform ENUM('FACEBOOK','INSTAGRAM','GOOGLE','OTHER','WHATSAPP');

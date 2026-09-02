@@ -4,6 +4,5 @@ public enum SocialMediaPlatform {
     FACEBOOK,
     INSTAGRAM,
     GOOGLE,
-    WHATSAPP,
     OTHER
 }
