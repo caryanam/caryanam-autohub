@@ -197,6 +197,7 @@ public class ChatServiceImpl implements ChatService {
 
         ChatMessageResponse response =
                 ChatMessageResponse.builder()
+                        .id(saved.getId())
                         .roomId(saved.getRoomId())
                         .senderId(saved.getSenderId())
                         .senderRole(saved.getSenderRole())

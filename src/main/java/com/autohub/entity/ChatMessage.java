@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "chat_messages")
@@ -42,5 +43,5 @@ public class ChatMessage {
     private String content;
 
     private LocalDateTime sentAt =
-            LocalDateTime.now();
+            LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
 }

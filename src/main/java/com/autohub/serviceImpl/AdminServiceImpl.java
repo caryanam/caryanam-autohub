@@ -74,7 +74,7 @@ public class AdminServiceImpl implements AdminService {
                 .toList();
     }
 
- private String buildMediaUrl(String storedPath) {
+    private String buildMediaUrl(String storedPath) {
 
      if (storedPath == null || storedPath.isBlank()) {
          return null;
@@ -88,7 +88,6 @@ public class AdminServiceImpl implements AdminService {
 
      return serverUrl + normalized;
  }
-
 
     //Dealer Count
     @Override
@@ -153,9 +152,7 @@ public class AdminServiceImpl implements AdminService {
                         .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
                         .kilometerDriven(vehicle.getKilometerDriven())
                         .fuelType(vehicle.getFuelType())
-                      //  .transmission(vehicle.getTransmission())
                         .ownershipDetails(vehicle.getOwnershipDetails())
-                      //  .insuranceStatus(String.valueOf(vehicle.getInsuranceStatus()))
                         .vehicleDescription(vehicle.getVehicleDescription())
                         .city(vehicle.getCity())
                         .dealerContactName(vehicle.getDealer().getOwnerName())
