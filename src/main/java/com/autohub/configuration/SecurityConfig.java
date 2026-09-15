@@ -55,6 +55,7 @@ public class SecurityConfig {
                                 "/api/customer/**",
                                 "/api/pincode/**",
                                 "/api/offer-video/active",
+                                "/api/festival-offer/active",
                                 "/api/dealer/register",
                                 "/api/dealer/register/**",
                                 "/api/dealer/send-registration-otp",
