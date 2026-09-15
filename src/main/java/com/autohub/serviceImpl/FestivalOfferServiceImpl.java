@@ -37,7 +37,7 @@ public class FestivalOfferServiceImpl implements FestivalOfferService {
 
     @Override
     @Transactional
-    public FestivalOfferResponseDTO uploadFestivalOffer(MultipartFile file, Integer durationHours) {
+    public FestivalOfferResponseDTO uploadFestivalOffer(MultipartFile file, LocalDateTime expiresAt) {
         // Determine type
         String contentType = file.getContentType();
         FestivalOffer.MediaType mediaType = FestivalOffer.MediaType.IMAGE;
@@ -53,8 +53,6 @@ public class FestivalOfferServiceImpl implements FestivalOfferService {
         for (FestivalOffer existing : existingOffers) {
             deleteFestivalOffer(existing.getId());
         }
-
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(durationHours);
 
         FestivalOffer entity = FestivalOffer.builder()
                 .mediaUrl(publicPath)

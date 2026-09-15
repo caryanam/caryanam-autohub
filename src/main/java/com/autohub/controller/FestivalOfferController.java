@@ -26,22 +26,22 @@ public class FestivalOfferController {
      */
     @PostMapping(value = "/api/admin/festival-offer/upload", consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Upload a new festival offer (image or video) with a duration")
+    @Operation(summary = "Upload a new festival offer (image or video) with an expiration date")
     public ResponseEntity<ResponseDto<FestivalOfferResponseDTO>> uploadFestivalOffer(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("durationHours") Integer durationHours) {
+            @RequestParam("expiresAt") @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime expiresAt) {
 
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(
                     new ResponseDto<>(400, "Media file is required.", null));
         }
 
-        if (durationHours == null || durationHours <= 0) {
+        if (expiresAt == null || expiresAt.isBefore(java.time.LocalDateTime.now())) {
             return ResponseEntity.badRequest().body(
-                    new ResponseDto<>(400, "Duration must be greater than 0.", null));
+                    new ResponseDto<>(400, "Expiration date must be in the future.", null));
         }
 
-        FestivalOfferResponseDTO response = festivalOfferService.uploadFestivalOffer(file, durationHours);
+        FestivalOfferResponseDTO response = festivalOfferService.uploadFestivalOffer(file, expiresAt);
         return ResponseEntity.ok(new ResponseDto<>(200, "Festival offer uploaded successfully.", response));
     }
 
