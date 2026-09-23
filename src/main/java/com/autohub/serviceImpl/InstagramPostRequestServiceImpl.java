@@ -130,7 +130,6 @@ public class InstagramPostRequestServiceImpl implements InstagramPostRequestServ
     private boolean hasMandatoryFields(Vehicle vehicle) {
         return vehicle.getBrand() != null && !vehicle.getBrand().isBlank()
                 && vehicle.getModel() != null && !vehicle.getModel().isBlank()
-                && vehicle.getVariant() != null && !vehicle.getVariant().isBlank()
                 && vehicle.getAskingPrice() != null
                 && vehicle.getRegistrationYear() != null
                 && vehicle.getFuelType() != null && !vehicle.getFuelType().isBlank()
