@@ -63,6 +63,7 @@ public class SecurityConfig {
                                 "/api/dealer/send-whatsapp-otp",
                                 "/api/dealer/verify-whatsapp-otp",
                                 "/api/vehicle/dealer/**",
+                                "/api/vehicle/qr/**",
                                 "/api/vehicle/**",
                                 "/api/vehicle/featured",
                                 "/api/vehicle/latest-vehicles",
