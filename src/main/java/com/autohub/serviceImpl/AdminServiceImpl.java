@@ -163,6 +163,13 @@ public class AdminServiceImpl implements AdminService {
                         .vehicleStatus(vehicle.getVehicleStatus())
                         .vehicleType(vehicle.getVehicleType())
                         .createdAt(vehicle.getCreatedAt())
+                        .certifyRequested(vehicle.getCertifyRequested())
+                        .isCertified(vehicle.getIsCertified())
+                        .inspectionStatus(vehicle.getInspectionStatus())
+                        .certifiedAt(vehicle.getCertifiedAt())
+                        .certifiedByInspectorId(vehicle.getCertifiedBy() != null ? vehicle.getCertifiedBy().getId() : null)
+                        .certifiedByInspectorName(vehicle.getCertifiedBy() != null ? vehicle.getCertifiedBy().getFullName() : null)
+                        .inspectionNotes(vehicle.getInspectionNotes())
                         .images(
                                 vehicle.getMediaList() == null
                                         ? List.of()

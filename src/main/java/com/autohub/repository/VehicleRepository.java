@@ -31,17 +31,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
             List<VehicleStatus> statuses
     );
 
-
-//    @Query("""
-//       SELECT v
-//       FROM Vehicle v
-//       WHERE v.vehicleStatus IN ('ACTIVE', 'FEATURED')
-//       AND v.vehicleType = :vehicleType
-//       """)
-//    Page<Vehicle> findAllActiveAndFeaturedVehicles(
-//            @Param("vehicleType") VehicleType vehicleType,
-//            Pageable pageable);
-
     @Query("""
        SELECT v
        FROM Vehicle v
@@ -51,7 +40,18 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findAllActiveAndFeaturedVehicles(
             @Param("vehicleType") VehicleType vehicleType);
 
+    @Query("""
+       SELECT v
+       FROM Vehicle v
+       WHERE v.vehicleType = :vehicleType
+       AND v.vehicleStatus = 'ACTIVE'
+       AND v.isCertified = true
+       ORDER BY v.certifiedAt DESC, v.createdAt DESC
+       """)
+    List<Vehicle> findAllActiveVerifiedVehicles(
+            @Param("vehicleType") VehicleType vehicleType);
 
+    long countByIsCertifiedTrue();
 
-
+    List<Vehicle> findByIsCertifiedTrue();
 }

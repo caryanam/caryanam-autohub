@@ -45,7 +45,6 @@ public class VehicleRequestDTO {
     @Positive(message = "Ownership Details must be greater than 0")
     private int ownershipDetails;
 
-
     @NotBlank(message = "City is Required")
     @Size(min = 2, max = 50,
             message = "City must be between 2 and 50 characters")
@@ -69,7 +68,5 @@ public class VehicleRequestDTO {
     @NotNull(message = "Vehicle Type is Required")
     private VehicleType vehicleType;
 
-
-
-
+    private Boolean certifyRequested;
 }

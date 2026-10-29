@@ -9,9 +9,11 @@ import com.autohub.emailservice.EmailService;
 import com.autohub.entity.Admin;
 import com.autohub.entity.Customer;
 import com.autohub.entity.Dealer;
+import com.autohub.entity.Inspector;
 import com.autohub.repository.AdminRepository;
 import com.autohub.repository.CustomerRepository;
 import com.autohub.repository.DealerRepository;
+import com.autohub.repository.InspectorRepository;
 import com.autohub.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final CustomerRepository customerRepository;
+    private final InspectorRepository inspectorRepository;
 
     // =====================================================
     // LOGIN
@@ -46,7 +49,6 @@ public class AuthServiceImpl implements AuthService {
     // CHECK TOKEN
     // =====================================================
     public static boolean isTokenBlacklisted(String token) {
-
         return tokenBlacklist.contains(token);
     }
 
@@ -62,23 +64,21 @@ public class AuthServiceImpl implements AuthService {
         boolean exists;
 
         if (isEmail) {
-
             exists =
                     dealerRepository.existsByEmail(request.getUsername())
                             || adminRepository.existsByEmail(request.getUsername())
-                            || customerRepository.existsByEmail(request.getUsername());
-
+                            || customerRepository.existsByEmail(request.getUsername())
+                            || inspectorRepository.existsByEmail(request.getUsername());
         } else {
-
             exists =
                     dealerRepository.existsByDealerMobile(request.getUsername())
                             || dealerRepository.existsByExecutiveMobile(request.getUsername())
                             || adminRepository.existsByMobile(request.getUsername())
-                            || customerRepository.existsByMobile(request.getUsername());
+                            || customerRepository.existsByMobile(request.getUsername())
+                            || inspectorRepository.existsByMobile(request.getUsername());
         }
 
         if (!exists) {
-
             throw new RuntimeException(
                     "Account not found. Please register first."
             );
@@ -89,16 +89,13 @@ public class AuthServiceImpl implements AuthService {
         // =====================================
 
         try {
-
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
                             request.getPassword()
                     )
             );
-
         } catch (Exception e) {
-
             throw new RuntimeException(
                     "Invalid Password"
             );
@@ -108,25 +105,20 @@ public class AuthServiceImpl implements AuthService {
         // DEALER LOGIN
         // =====================================
 
-
         Optional<Dealer> dealerOpt;
 
         if (isEmail) {
-
             dealerOpt =
                     dealerRepository.findByEmail(
                             request.getUsername()
                     );
-
         } else {
-
             dealerOpt =
                     dealerRepository.findByDealerMobile(
                             request.getUsername()
                     );
 
             if (dealerOpt.isEmpty()) {
-
                 dealerOpt =
                         dealerRepository.findByExecutiveMobile(
                                 request.getUsername()
@@ -135,7 +127,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (dealerOpt.isPresent()) {
-
             Dealer dealer = dealerOpt.get();
 
             String token = jwtUtil.generateToken(
@@ -164,7 +155,6 @@ public class AuthServiceImpl implements AuthService {
                         : adminRepository.findByMobile(request.getUsername());
 
         if (adminOpt.isPresent()) {
-
             Admin admin = adminOpt.get();
 
             String token = jwtUtil.generateToken(
@@ -193,7 +183,6 @@ public class AuthServiceImpl implements AuthService {
                         : customerRepository.findByMobile(request.getUsername());
 
         if (customerOpt.isPresent()) {
-
             Customer customer = customerOpt.get();
 
             String token = jwtUtil.generateToken(
@@ -212,6 +201,38 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
+        // =====================================
+        // INSPECTOR LOGIN
+        // =====================================
+
+        Optional<Inspector> inspectorOpt =
+                isEmail
+                        ? inspectorRepository.findByEmail(request.getUsername())
+                        : inspectorRepository.findByMobile(request.getUsername());
+
+        if (inspectorOpt.isPresent()) {
+            Inspector inspector = inspectorOpt.get();
+
+            if (Boolean.FALSE.equals(inspector.getIsActive())) {
+                throw new RuntimeException("Inspector account is deactivated. Please contact Admin.");
+            }
+
+            String token = jwtUtil.generateToken(
+                    inspector.getId(),
+                    inspector.getFullName(),
+                    inspector.getMobile(),
+                    inspector.getRole(),
+                    inspector.getMobile(),
+                    inspector.getAssignedArea()
+            );
+
+            return new LoginResponseDTO(
+                    inspector.getId(),
+                    inspector.getRole().name(),
+                    token
+            );
+        }
+
         throw new RuntimeException(
                 "Login Failed"
         );
@@ -221,25 +242,20 @@ public class AuthServiceImpl implements AuthService {
     public void logout(String token) {
 
         if (token == null || token.isBlank()) {
-
             throw new RuntimeException(
                     "Authorization Token is Missing"
             );
         }
 
         if (token.startsWith("Bearer ")) {
-
             token = token.substring(7);
         }
 
         tokenBlacklist.add(token);
-
         System.out.println("Logout Successfully");
     }
 
-
-    //Forgot Password Common For ADMIN,DEALER,CUSTOMER
-
+    // Forgot Password Common For ADMIN, DEALER, CUSTOMER
     @Override
     public String sendOtp(String email) {
 
@@ -263,7 +279,6 @@ public class AuthServiceImpl implements AuthService {
             dealer.setIsOtpVerified(false);
 
             dealerRepository.save(dealer);
-
             emailService.sendOtp(email, otp);
 
             return "OTP Sent Successfully";
@@ -285,7 +300,6 @@ public class AuthServiceImpl implements AuthService {
             customer.setIsOtpVerified(false);
 
             customerRepository.save(customer);
-
             emailService.sendOtp(email, otp);
 
             return "OTP Sent Successfully";
@@ -307,7 +321,6 @@ public class AuthServiceImpl implements AuthService {
             admin.setIsOtpVerified(false);
 
             adminRepository.save(admin);
-
             emailService.sendOtp(email, otp);
 
             return "OTP Sent Successfully";
@@ -324,7 +337,6 @@ public class AuthServiceImpl implements AuthService {
                 dealerRepository.findByEmail(dto.getEmail());
 
         if (dealerOpt.isPresent()) {
-
             Dealer dealer = dealerOpt.get();
 
             validateOtp(
@@ -334,7 +346,6 @@ public class AuthServiceImpl implements AuthService {
             );
 
             dealer.setIsOtpVerified(true);
-
             dealerRepository.save(dealer);
 
             return "OTP Verified Successfully";
@@ -345,7 +356,6 @@ public class AuthServiceImpl implements AuthService {
                 customerRepository.findByEmail(dto.getEmail());
 
         if (customerOpt.isPresent()) {
-
             Customer customer = customerOpt.get();
 
             validateOtp(
@@ -355,7 +365,6 @@ public class AuthServiceImpl implements AuthService {
             );
 
             customer.setIsOtpVerified(true);
-
             customerRepository.save(customer);
 
             return "OTP Verified Successfully";
@@ -366,7 +375,6 @@ public class AuthServiceImpl implements AuthService {
                 adminRepository.findByEmail(dto.getEmail());
 
         if (adminOpt.isPresent()) {
-
             Admin admin = adminOpt.get();
 
             validateOtp(
@@ -376,7 +384,6 @@ public class AuthServiceImpl implements AuthService {
             );
 
             admin.setIsOtpVerified(true);
-
             adminRepository.save(admin);
 
             return "OTP Verified Successfully";
@@ -384,7 +391,6 @@ public class AuthServiceImpl implements AuthService {
 
         throw new RuntimeException("User Not Found");
     }
-
 
     @Override
     public String resetPassword(ResetPasswordDTO dto) {
@@ -394,7 +400,6 @@ public class AuthServiceImpl implements AuthService {
                 dealerRepository.findByEmail(dto.getEmail());
 
         if (dealerOpt.isPresent()) {
-
             Dealer dealer = dealerOpt.get();
 
             if (!Boolean.TRUE.equals(dealer.getIsOtpVerified())) {
@@ -419,7 +424,6 @@ public class AuthServiceImpl implements AuthService {
                 customerRepository.findByEmail(dto.getEmail());
 
         if (customerOpt.isPresent()) {
-
             Customer customer = customerOpt.get();
 
             if (!Boolean.TRUE.equals(customer.getIsOtpVerified())) {
@@ -444,7 +448,6 @@ public class AuthServiceImpl implements AuthService {
                 adminRepository.findByEmail(dto.getEmail());
 
         if (adminOpt.isPresent()) {
-
             Admin admin = adminOpt.get();
 
             if (!Boolean.TRUE.equals(admin.getIsOtpVerified())) {

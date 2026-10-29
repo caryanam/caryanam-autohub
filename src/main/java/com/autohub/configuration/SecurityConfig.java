@@ -114,6 +114,11 @@ public class SecurityConfig {
                                 "/api/wishlist/dealer/**"
                         ).hasRole("DEALER")
 
+                        // ── Inspector APIs ──
+                        .requestMatchers(
+                                "/api/inspector/**"
+                        ).hasRole("INSPECTOR")
+
                         // ── Customer APIs ──
                         .requestMatchers(
                                 "/api/lead/customer-dashboard",
@@ -139,7 +144,7 @@ public class SecurityConfig {
         // Authorization header. We must explicitly exclude webhook paths
         // from the filter so Meta's server-to-server calls pass through.
         http.addFilterBefore(
-                new WebhookBypassFilter(jwtFilter),
+                jwtFilter,
                 UsernamePasswordAuthenticationFilter.class
         );
 
@@ -147,17 +152,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-            throws Exception {
-        return config.getAuthenticationManager();
-    }
-
-    @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider =
+        DaoAuthenticationProvider authProvider =
                 new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
     @Bean
@@ -166,54 +165,68 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        // ── Regular CORS config for browser-based frontend requests ──
-        CorsConfiguration browserConfig = new CorsConfiguration();
-        browserConfig.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://localhost:5175",
-                "http://localhost:5176",
-                "http://localhost:3000",
-                "http://localhost:63342",
-                "http://127.0.0.1:5500",
-                "http://localhost:5500",
-                "https://caryanam.com",
-                "https://caryanam.com/",
-                "https://www.caryanam.com",
-                "https://c1.caryanam.com",
-                "https://c1.caryanam.com/"
-        ));
-        browserConfig.setAllowedMethods(
-                Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        browserConfig.setAllowedHeaders(List.of("*"));
-        browserConfig.setAllowCredentials(true);
-        browserConfig.setExposedHeaders(List.of("Authorization"));
-        browserConfig.setMaxAge(3600L);
+        CorsConfiguration configuration = new CorsConfiguration();
 
-        // ── Webhook CORS config for Meta's server-to-server calls ──
-        // Meta does NOT send an Origin header on server-to-server POST requests.
-        // Using setAllowedOrigins() with a fixed list blocks these requests
-        // because Spring rejects null/missing Origin.
-        // setAllowedOriginPatterns("*") with allowCredentials(false) is the
-        // correct way to allow server-to-server calls without credentials.
-        CorsConfiguration webhookConfig = new CorsConfiguration();
-        webhookConfig.setAllowedOriginPatterns(List.of("*"));
-        webhookConfig.setAllowedMethods(
-                Arrays.asList("GET", "POST", "OPTIONS"));
-        webhookConfig.setAllowedHeaders(List.of("*"));
-        webhookConfig.setAllowCredentials(false); // Must be false when origin is "*"
-        webhookConfig.setMaxAge(3600L);
+        configuration.setAllowedOriginPatterns(
+                List.of(
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        "http://localhost:5174",
+                        "https://caryanam.com",
+                        "https://admin.caryanam.com",
+                        "https://dealer.caryanam.com",
+                        "https://c1.caryanam.com",
+                        "https://caryanam-autohub-frontend.vercel.app",
+                        "https://*.vercel.app"
+                )
+        );
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        configuration.setAllowedMethods(
+                Arrays.asList(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
 
-        // Webhook paths get the open config — register FIRST (more specific wins)
-        source.registerCorsConfiguration("/api/webhook/**", webhookConfig);
-        source.registerCorsConfiguration("/api/webhook", webhookConfig);
+        configuration.setAllowedHeaders(
+                Arrays.asList(
+                        "Authorization",
+                        "Content-Type",
+                        "Accept",
+                        "Origin",
+                        "Access-Control-Request-Method",
+                        "Access-Control-Request-Headers"
+                )
+        );
 
-        // All other paths get the browser config
-        source.registerCorsConfiguration("/**", browserConfig);
+        configuration.setExposedHeaders(
+                List.of(
+                        "Authorization"
+                )
+        );
+
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
 
         return source;
     }

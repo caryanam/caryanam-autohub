@@ -1,9 +1,8 @@
 package com.autohub.dto;
 
+import com.autohub.enums.InspectionStatus;
 import com.autohub.enums.VehicleStatus;
 import com.autohub.enums.VehicleType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +18,6 @@ import java.util.List;
 @Builder
 public class VehicleResponseDTO {
 
-/*
     private Long id;
 
     private Long dealerId;
@@ -37,52 +35,8 @@ public class VehicleResponseDTO {
     private Long kilometerDriven;
 
     private String fuelType;
-
-    private String city;
-
-    private Integer modelYear;
-
-    private VehicleStatus vehicleStatus;
-
-    private VehicleType vehicleType;
-
-    private String vehicleDescription;
-
-    private LocalDateTime createdAt;
-
-    private String dealerBusinessName;
-
-    private String dealerContactNumber;
-
-    private List<String> images;
-
-    private List<String> videos;
-
-*/
-
-    private Long id;
-
-    private Long dealerId;
-
-    private String brand;
-
-    private String model;
-
-    private String variant;
-
-    private Integer registrationYear;
-
-    private BigDecimal askingPrice;
-
-    private Long kilometerDriven;
-
-    private String fuelType;
-//
-//    private String transmission;
 
     private int ownershipDetails;
-//
-//    private String insuranceStatus;
 
     private String city;
 
@@ -104,7 +58,7 @@ public class VehicleResponseDTO {
 
     private String executiveMobile;
 
-    private  String dealerContactEmail;
+    private String dealerContactEmail;
 
     private String dealerWhatsappNumber;
 
@@ -118,8 +72,21 @@ public class VehicleResponseDTO {
 
     private boolean isWishList;
 
+    private Boolean certifyRequested;
+
+    private Boolean isCertified;
+
+    private InspectionStatus inspectionStatus;
+
+    private LocalDateTime certifiedAt;
+
+    private Long certifiedByInspectorId;
+
+    private String certifiedByInspectorName;
+
+    private String inspectionNotes;
+
     private List<String> images;
 
     private List<String> videos;
-
 }

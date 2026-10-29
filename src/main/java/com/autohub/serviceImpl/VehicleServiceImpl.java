@@ -7,6 +7,7 @@ import com.autohub.entity.*;
 import com.autohub.enums.*;
 import com.autohub.exception.ResourceNotFoundException;
 import com.autohub.repository.*;
+import com.autohub.service.InspectorService;
 import com.autohub.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +28,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VehicleServiceImpl implements VehicleService {
 
-   private final VehicleRepository vehicleRepository;
-   private final DealerRepository dealerRepository;
-   private final VehicleMediaRepository mediaRepository;
-   private final CustomerLeadRepository leadRepository;
+    private final VehicleRepository vehicleRepository;
+    private final DealerRepository dealerRepository;
+    private final VehicleMediaRepository mediaRepository;
+    private final CustomerLeadRepository leadRepository;
     private final PaymentRepository paymentRepository;
     private final VehicleViewRepository vehicleViewRepository;
     private final WishlistRepository wishlistRepository;
@@ -39,6 +40,8 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleInstagramPostRequestRepository vehicleInstagramPostRequestRepository;
     private final VehicleSocialPostRequestRepository vehicleSocialPostRequestRepository;
     private final SocialVisitLogRepository socialVisitLogRepository;
+    private final VehicleInspectionRequestRepository inspectionRequestRepository;
+    private final InspectorService inspectorService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -49,14 +52,17 @@ public class VehicleServiceImpl implements VehicleService {
     @Value("${spring.server.url}")
     private String serverUrl;
 
-
-
     @Override
-    public VehicleResponseDTO addVehicleWithData(VehicleRequestDTO vehicleRequestDTO, List<MultipartFile> images, List<MultipartFile> videos, Long dealerId) throws IOException {
+    @Transactional
+    public VehicleResponseDTO addVehicleWithData(
+            VehicleRequestDTO vehicleRequestDTO,
+            List<MultipartFile> images,
+            List<MultipartFile> videos,
+            Long dealerId
+    ) throws IOException {
 
         Dealer dealer = dealerRepository.findById(dealerId)
-                .orElseThrow(() ->
-                        new RuntimeException("Dealer not found"));
+                .orElseThrow(() -> new RuntimeException("Dealer not found"));
 
         // Dealer account status Check
         if (dealer.getDealerAccountStatus() != DealerStatus.APPROVED) {
@@ -66,57 +72,36 @@ public class VehicleServiceImpl implements VehicleService {
         // ===============================
         // FREE TRIAL / SUBSCRIPTION CHECK
         // ===============================
-
-        boolean freeTrialActive =
-                dealer.getFreeTrialEndDate() != null
-                        && LocalDateTime.now()
-                        .isBefore(dealer.getFreeTrialEndDate());
+        boolean freeTrialActive = dealer.getFreeTrialEndDate() != null
+                && LocalDateTime.now().isBefore(dealer.getFreeTrialEndDate());
 
         if (!freeTrialActive) {
-
             Payment payment = paymentRepository
                     .findTopByDealerIdOrderByPaymentIdDesc(dealerId)
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Your free plan is expired. Please upgrade the subscription plan !!"));
+                    .orElseThrow(() -> new RuntimeException(
+                            "Your free plan is expired. Please upgrade the subscription plan !!"));
 
             if (payment.getPaymentStatus() == PaymentStatus.PENDING) {
-
-                throw new RuntimeException(
-                        "Your subscription plan is waiting for admin approval.");
+                throw new RuntimeException("Your subscription plan is waiting for admin approval.");
             }
 
             if (dealer.getSubscriptionEndDate() != null
-                    && dealer.getSubscriptionEndDate()
-                    .isBefore(LocalDateTime.now())) {
-
-                throw new RuntimeException(
-                        "Subscription expired. Please renew subscription.");
+                    && dealer.getSubscriptionEndDate().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Subscription expired. Please renew subscription.");
             }
         }
 
         if (!freeTrialActive && dealer.getSubscriptionPlan() == null) {
-            throw new RuntimeException(
-                    "Subscription plan not assigned. Please contact admin.");
+            throw new RuntimeException("Subscription plan not assigned. Please contact admin.");
         }
-
 
         // Vehicle Limit Check
         Long vehicleCount = vehicleRepository.countByDealer_Id(dealerId);
-
-        if (freeTrialActive) {
-            // Free Trial allows unlimited vehicles
-            // No limit check required during the 1-month free trial period
-        } else {
-
+        if (!freeTrialActive) {
             if (dealer.getSubscriptionPlan() != null
                     && dealer.getSubscriptionPlan() != SubscriptionPlan.PREMIUM) {
-
-                int vehicleLimit =
-                        dealer.getSubscriptionPlan().getVehicleLimit();
-
+                int vehicleLimit = dealer.getSubscriptionPlan().getVehicleLimit();
                 if (vehicleCount >= vehicleLimit) {
-
                     throw new RuntimeException(
                             "Vehicle limit exceeded. Your "
                                     + dealer.getSubscriptionPlan()
@@ -129,7 +114,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         // Duplicate Vehicle Check
         List<Vehicle> dealerVehicles = vehicleRepository.findByDealerId(dealerId);
-        boolean isDuplicate = dealerVehicles.stream().anyMatch(v -> 
+        boolean isDuplicate = dealerVehicles.stream().anyMatch(v ->
                 v.getBrand() != null && v.getBrand().equalsIgnoreCase(vehicleRequestDTO.getBrand()) &&
                 v.getModel() != null && v.getModel().equalsIgnoreCase(vehicleRequestDTO.getModel()) &&
                 v.getVariant() != null && v.getVariant().equalsIgnoreCase(vehicleRequestDTO.getVariant()) &&
@@ -142,27 +127,22 @@ public class VehicleServiceImpl implements VehicleService {
             throw new RuntimeException("Duplicate vehicle: This vehicle already exists in your inventory.");
         }
 
-
-        //Upload Image Validation Minimum 5 images required to add vehicle
+        // Upload Image Validation Minimum 5 images required
         if (images == null || images.size() < 5) {
-            throw new RuntimeException(
-                    "Minimum 5 images are required");
+            throw new RuntimeException("Minimum 5 images are required");
         }
 
-
         for (MultipartFile image : images) {
-
             String contentType = image.getContentType();
-
             if (contentType == null ||
                     !(contentType.equalsIgnoreCase("image/jpeg")
                             || contentType.equalsIgnoreCase("image/jpg")
                             || contentType.equalsIgnoreCase("image/png"))) {
-
-                throw new RuntimeException(
-                        "Only JPG, JPEG and PNG images are allowed");
+                throw new RuntimeException("Only JPG, JPEG and PNG images are allowed");
             }
         }
+
+        boolean certifyReq = Boolean.TRUE.equals(vehicleRequestDTO.getCertifyRequested());
 
         // Save Vehicle
         Vehicle vehicle = Vehicle.builder()
@@ -182,242 +162,106 @@ public class VehicleServiceImpl implements VehicleService {
                 .financeAvailability(vehicleRequestDTO.getFinanceAvailability())
                 .vehicleStatus(VehicleStatus.ACTIVE)
                 .vehicleType(vehicleRequestDTO.getVehicleType())
-
+                .certifyRequested(certifyReq)
+                .isCertified(false)
+                .inspectionStatus(certifyReq ? InspectionStatus.PENDING : InspectionStatus.NONE)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
 
+        // If dealer selected Yes for certification, log inspection request in dealer's area
+        if (certifyReq) {
+            inspectorService.createOrUpdateInspectionRequestForVehicle(savedVehicle.getId(), dealerId);
+        }
+
         // IMAGE UPLOAD
-
         if (images != null && !images.isEmpty()) {
-
             long maxImageSize = 10 * 1024 * 1024; // 10 MB
 
             for (MultipartFile file : images) {
-
-                String contentType = file.getContentType();
-
-                // Image Type Validation
-                if (contentType == null ||
-                        !(contentType.equalsIgnoreCase("image/jpeg")
-                                || contentType.equalsIgnoreCase("image/jpg")
-                                || contentType.equalsIgnoreCase("image/png"))) {
-
-                    throw new RuntimeException(
-                            "Only JPG, JPEG and PNG images are allowed");
-                }
-
-                // Empty File Validation
                 if (file.isEmpty()) {
-                    throw new RuntimeException(
-                            "Image file cannot be empty");
+                    throw new RuntimeException("Image file cannot be empty");
                 }
-
-                // File Size Validation
                 if (file.getSize() > maxImageSize) {
-                    throw new RuntimeException(
-                            "Image size cannot exceed 10 MB");
+                    throw new RuntimeException("Image size cannot exceed 10 MB");
                 }
 
-                // uploadDir now comes from file.upload-dir=uploads/dealers (no
-                // leading slash) so this resolves to a path RELATIVE to the
-                // app's working directory - the same base directory the
-                // static resource handler ("/uploads/**" -> uploads/)
-                // actually serves from. This is the fix: previously a leading
-                // slash on file.upload-dir made this an absolute filesystem
-                // path at the OS root, completely disconnected from where
-                // Spring was looking for static files.
-                String imageFolder =
-                        uploadDir +
-                                "/dealer_" + dealerId +
-                                "/vehicle_" + savedVehicle.getId() +
-                                "/images";
-
+                String imageFolder = uploadDir + "/dealer_" + dealerId + "/vehicle_" + savedVehicle.getId() + "/images";
                 File folder = new File(imageFolder);
-
                 if (!folder.exists()) {
                     folder.mkdirs();
                 }
 
-                // Sanitize the original filename: strip spaces/special
-                // characters that can cause issues in URLs or on some
-                // filesystems, instead of relying on the browser to
-                // URL-encode them later.
                 String safeOriginalName = sanitizeFileName(file.getOriginalFilename());
+                String fileName = System.currentTimeMillis() + "_" + safeOriginalName;
+                Path targetLocation = Paths.get(imageFolder).resolve(fileName);
+                Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-                String fileName =
-                        System.currentTimeMillis()
-                                + "_"
-                                + safeOriginalName;
+                String publicFilePath = "/" + stripLeadingSlash(uploadDir) + "/dealer_" + dealerId + "/vehicle_" + savedVehicle.getId() + "/images/" + fileName;
 
-                Path filePath =
-                        Paths.get(imageFolder, fileName);
-
-                Files.copy(
-                        file.getInputStream(),
-                        filePath,
-                        StandardCopyOption.REPLACE_EXISTING);
-
-                // Build the PUBLIC (URL) path explicitly and independently of
-                // the OS path representation used for the disk write above.
-                // Always exactly one leading slash, always forward slashes -
-                // this is what gets stored in the DB and later prefixed with
-                // serverUrl when building response DTOs.
-                String publicFilePath =
-                        "/" + stripLeadingSlash(uploadDir) +
-                                "/dealer_" + dealerId +
-                                "/vehicle_" + savedVehicle.getId() +
-                                "/images/" + fileName;
-
-                VehicleMedia media =
-                        VehicleMedia.builder()
-                                .fileName(fileName)
-                                .fileType(file.getContentType())
-                                .filePath(publicFilePath)
-                                .mediaType("IMAGE")
-                                .vehicle(savedVehicle)
-                                .uploadedAt(LocalDateTime.now())
-                                .build();
+                VehicleMedia media = VehicleMedia.builder()
+                        .fileName(fileName)
+                        .fileType(file.getContentType())
+                        .filePath(publicFilePath)
+                        .mediaType("IMAGE")
+                        .uploadedAt(LocalDateTime.now())
+                        .vehicle(savedVehicle)
+                        .build();
 
                 mediaRepository.save(media);
             }
         }
 
         // VIDEO UPLOAD
-
         if (videos != null && !videos.isEmpty()) {
-
-            long maxVideoSize = 10 * 1024 * 1024; // 10 MB
+            long maxVideoSize = 250 * 1024 * 1024; // 250 MB
 
             for (MultipartFile file : videos) {
-
-                // Empty File Validation (Skip empty files if video is optional)
-                if (file.isEmpty()) {
-                    continue;
-                }
-
                 String contentType = file.getContentType();
-
-                // Video Type Validation
-                if (contentType == null ||
-                        !(contentType.equalsIgnoreCase("video/mp4")
-                                || contentType.equalsIgnoreCase("video/quicktime")
-                                || contentType.equalsIgnoreCase("video/x-msvideo"))) {
-
-                    throw new RuntimeException(
-                            "Only MP4, MOV and AVI videos are allowed");
+                if (contentType == null || !(contentType.equalsIgnoreCase("video/mp4")
+                        || contentType.equalsIgnoreCase("video/quicktime")
+                        || contentType.equalsIgnoreCase("video/x-msvideo"))) {
+                    throw new RuntimeException("Only MP4, MOV, and AVI videos are allowed");
                 }
-
-
-                // File Size Validation
+                if (file.isEmpty()) {
+                    throw new RuntimeException("Video file cannot be empty");
+                }
                 if (file.getSize() > maxVideoSize) {
-                    throw new RuntimeException(
-                            "Video size cannot exceed 100 MB");
+                    throw new RuntimeException("Video size cannot exceed 250 MB");
                 }
 
-                String videoFolder =
-                        uploadDir +
-                                "/dealer_" + dealerId +
-                                "/vehicle_" + savedVehicle.getId() +
-                                "/videos";
-
+                String videoFolder = uploadDir + "/dealer_" + dealerId + "/vehicle_" + savedVehicle.getId() + "/videos";
                 File folder = new File(videoFolder);
-
                 if (!folder.exists()) {
                     folder.mkdirs();
                 }
 
                 String safeOriginalName = sanitizeFileName(file.getOriginalFilename());
+                String fileName = System.currentTimeMillis() + "_" + safeOriginalName;
+                Path targetLocation = Paths.get(videoFolder).resolve(fileName);
+                Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-                String fileName =
-                        System.currentTimeMillis()
-                                + "_"
-                                + safeOriginalName;
+                String publicFilePath = "/" + stripLeadingSlash(uploadDir) + "/dealer_" + dealerId + "/vehicle_" + savedVehicle.getId() + "/videos/" + fileName;
 
-                Path filePath =
-                        Paths.get(videoFolder, fileName);
-
-                Files.copy(
-                        file.getInputStream(),
-                        filePath,
-                        StandardCopyOption.REPLACE_EXISTING);
-
-                String publicFilePath =
-                        "/" + stripLeadingSlash(uploadDir) +
-                                "/dealer_" + dealerId +
-                                "/vehicle_" + savedVehicle.getId() +
-                                "/videos/" + fileName;
-
-                VehicleMedia media =
-                        VehicleMedia.builder()
-                                .fileName(fileName)
-                                .fileType(file.getContentType())
-                                .filePath(publicFilePath)
-                                .mediaType("VIDEO")
-                                .uploadedAt(LocalDateTime.now())
-                                .vehicle(savedVehicle)
-                                .build();
+                VehicleMedia media = VehicleMedia.builder()
+                        .fileName(fileName)
+                        .fileType(file.getContentType())
+                        .filePath(publicFilePath)
+                        .mediaType("VIDEO")
+                        .uploadedAt(LocalDateTime.now())
+                        .vehicle(savedVehicle)
+                        .build();
 
                 mediaRepository.save(media);
             }
         }
 
-        List<VehicleMedia> mediaList =
-                mediaRepository.findByVehicleId(savedVehicle.getId());
-
-        List<String> image = mediaList.stream()
-                .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                .map(media -> serverUrl+ media.getFilePath().replace("\\", "/"))
-                .toList();
-
-        List<String> video = mediaList.stream()
-                .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                .map(media -> serverUrl+ media.getFilePath().replace("\\", "/"))
-                .toList();
-
-        System.out.println("Media Count = " + mediaList.size());
-
-        return VehicleResponseDTO.builder()
-                .id(savedVehicle.getId())
-                .dealerId(savedVehicle.getDealer().getId())
-                .brand(savedVehicle.getBrand())
-                .model(savedVehicle.getModel())
-                .variant(savedVehicle.getVariant())
-                .registrationYear(savedVehicle.getRegistrationYear())
-                .fuelType(savedVehicle.getFuelType())
-                .kilometerDriven(savedVehicle.getKilometerDriven())
-                .ownershipDetails(savedVehicle.getOwnershipDetails())
-                .askingPrice(BigDecimal.valueOf(savedVehicle.getAskingPrice()))
-                .vehicleDescription(savedVehicle.getVehicleDescription())
-                .city(savedVehicle.getCity())
-                .dealerContactName(vehicle.getDealer().getOwnerName())
-                .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                .dealerContactEmail(vehicle.getDealer().getEmail())
-                .vehicleStatus(savedVehicle.getVehicleStatus())
-                .vehicleType(savedVehicle.getVehicleType())
-                .createdAt(savedVehicle.getCreatedAt())
-                .financeAvailability(savedVehicle.isFinanceAvailability())
-                .images(image)
-                .videos(video)
-                .build();
-
+        // Fetch fresh copy with media list populated
+        Vehicle freshVehicle = vehicleRepository.findById(savedVehicle.getId()).orElse(savedVehicle);
+        return mapToDTO(freshVehicle, null);
     }
 
-// ============================================================
-// Add these two private helper methods anywhere in the class
-// (e.g. near the bottom, alongside other private helpers).
-// ============================================================
-
-    /**
-     * Removes any leading slash(es) from a configured directory value, so it
-     * can be safely combined with exactly one "/" when building a public URL
-     * path - regardless of whether file.upload-dir was set with or without
-     * a leading slash.
-     */
     private String stripLeadingSlash(String path) {
         if (path == null) {
             return "";
@@ -425,28 +269,19 @@ public class VehicleServiceImpl implements VehicleService {
         return path.replaceAll("^/+", "");
     }
 
-    /**
-     * Replaces spaces and characters that are awkward in URLs/filesystems
-     * with underscores, so stored filenames are predictable and don't rely
-     * on the client correctly URL-encoding things like spaces later.
-     */
     private String sanitizeFileName(String originalFileName) {
         if (originalFileName == null || originalFileName.isBlank()) {
             return "file";
         }
-        return originalFileName
-                .trim()
-                .replaceAll("[^a-zA-Z0-9._-]", "_");
+        return originalFileName.trim().replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
-
-
     @Override
-    public VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request){
+    @Transactional
+    public VehicleResponseDTO updateVehicle(Long id, VehicleRequestDTO request) {
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
-                        new ResourceNotFoundException("Vehicle not found with id: " + id));
-
+                new ResourceNotFoundException("Vehicle not found with id: " + id));
 
         vehicle.setBrand(request.getBrand());
         vehicle.setModel(request.getModel());
@@ -459,480 +294,217 @@ public class VehicleServiceImpl implements VehicleService {
         vehicle.setAskingPrice(request.getAskingPrice());
         vehicle.setFinanceAvailability(request.getFinanceAvailability());
         vehicle.setVehicleType(request.getVehicleType());
-        vehicle.setVehicleDescription(
-                request.getVehicleDescription().trim().replaceAll("\\s+", " "));
+        vehicle.setVehicleDescription(request.getVehicleDescription().trim().replaceAll("\\s+", " "));
+
+        // Certification request update on edit
+        if (Boolean.TRUE.equals(request.getCertifyRequested()) && !Boolean.TRUE.equals(vehicle.getIsCertified())) {
+            vehicle.setCertifyRequested(true);
+            vehicle.setInspectionStatus(InspectionStatus.PENDING);
+            inspectorService.createOrUpdateInspectionRequestForVehicle(vehicle.getId(), vehicle.getDealer().getId());
+        }
 
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
-
-        return VehicleResponseDTO.builder()
-                .id(updatedVehicle.getId())
-                .brand(updatedVehicle.getBrand())
-                .model(updatedVehicle.getModel())
-                .variant(updatedVehicle.getVariant())
-                .city(updatedVehicle.getCity())
-                .registrationYear(updatedVehicle.getRegistrationYear())
-                .fuelType(updatedVehicle.getFuelType())
-                .kilometerDriven(updatedVehicle.getKilometerDriven())
-                .ownershipDetails(updatedVehicle.getOwnershipDetails())
-                .askingPrice(BigDecimal.valueOf(updatedVehicle.getAskingPrice()))
-                .vehicleType(updatedVehicle.getVehicleType())
-                .vehicleDescription(updatedVehicle.getVehicleDescription())
-                .build();
+        return mapToDTO(updatedVehicle, null);
     }
 
-
     @Override
-    public VehicleResponseDTO updateVehicleStatus(Long id,VehicleStatusRequestDTO request){
+    public VehicleResponseDTO updateVehicleStatus(Long id, VehicleStatusRequestDTO request) {
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Vehicle not found"));
-
+                new ResourceNotFoundException("Vehicle not found"));
 
         if (!request.getStatus().equalsIgnoreCase("ACTIVE")
                 && !request.getStatus().equalsIgnoreCase("INACTIVE") && !request.getStatus().equalsIgnoreCase("FEATURED")) {
-
             throw new RuntimeException("Status must be ACTIVE or INACTIVE");
         }
 
         vehicle.setVehicleStatus(VehicleStatus.valueOf(request.getStatus().toUpperCase()));
-
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
 
         return VehicleResponseDTO.builder()
                 .id(updatedVehicle.getId())
-                .vehicleStatus(VehicleStatus.valueOf(String.valueOf(updatedVehicle.getVehicleStatus())))
+                .vehicleStatus(updatedVehicle.getVehicleStatus())
                 .build();
     }
 
     @Override
     @Transactional
-    public void deleteVehicle(Long id){
+    public void deleteVehicle(Long id) {
 
         Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Vehicle not found with id: " + id));
 
         // Delete dependent records using JPA repositories to prevent foreign key constraint violations
+        inspectionRequestRepository.deleteByVehicleId(vehicle.getId());
         instagramPostBatchItemRepository.deleteByVehicleId(vehicle.getId());
         socialPostBatchItemRepository.deleteByVehicleId(vehicle.getId());
         vehicleInstagramPostRequestRepository.deleteByVehicleId(vehicle.getId());
         vehicleSocialPostRequestRepository.deleteByVehicleId(vehicle.getId());
         socialVisitLogRepository.deleteByVehicleId(vehicle.getId());
         wishlistRepository.deleteByVehicleId(vehicle.getId());
-
         leadRepository.deleteLeadsByVehicleId(vehicle.getId());
-
         vehicleViewRepository.deleteByVehicleId(vehicle.getId());
 
         vehicleRepository.deleteById(vehicle.getId());
-
-
-
     }
-
 
     @Override
     public List<VehicleResponseDTO> getAllVehicleByDealerId(Long dealerId) {
-
         List<Vehicle> vehicles = vehicleRepository.findByDealerId(dealerId);
 
         if (vehicles.isEmpty()) {
             throw new ResourceNotFoundException("Dealer has no vehicles");
         }
 
-        System.out.println("Dealer id"+vehicles);
-
         return vehicles.stream()
-                .map(vehicle -> VehicleResponseDTO.builder()
-                        .id(vehicle.getId())
-                        .dealerId(vehicle.getDealer().getId())
-                        .brand(vehicle.getBrand())
-                        .model(vehicle.getModel())
-                        .variant(vehicle.getVariant())
-                        .registrationYear(vehicle.getRegistrationYear())
-                        .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
-                        .kilometerDriven(vehicle.getKilometerDriven())
-                        .fuelType(vehicle.getFuelType())
-                        .ownershipDetails(vehicle.getOwnershipDetails())
-                        .vehicleDescription(vehicle.getVehicleDescription())
-                        .city(vehicle.getCity())
-                        .dealerContactName(vehicle.getDealer().getOwnerName())
-                        .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                        .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                        .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                        .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                        .dealerContactEmail(vehicle.getDealer().getEmail())
-                        .vehicleStatus(vehicle.getVehicleStatus())
-                        .vehicleType(vehicle.getVehicleType())
-                        .financeAvailability(vehicle.isFinanceAvailability())
-                        .createdAt(vehicle.getCreatedAt())
-                        .images(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-
-                        .videos(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        //.map(VehicleMedia::getFilePath)
-                                        .map(media ->serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-
-                        .build())
+                .map(v -> mapToDTO(v, null))
                 .toList();
     }
-
-
 
     @Override
     public VehicleResponseDTO getVehicleById(Long vehicleId) {
-
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Vehicle not found with id : " + vehicleId));
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with id : " + vehicleId));
 
-
-
-        return VehicleResponseDTO.builder()
-                .id(vehicle.getId())
-                .dealerId(vehicle.getDealer().getId())
-                .brand(vehicle.getBrand())
-                .model(vehicle.getModel())
-                .variant(vehicle.getVariant())
-                .registrationYear(vehicle.getRegistrationYear())
-                .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
-                .kilometerDriven(vehicle.getKilometerDriven())
-                .fuelType(vehicle.getFuelType().trim().toUpperCase())
-                .ownershipDetails(vehicle.getOwnershipDetails())
-                .vehicleDescription(vehicle.getVehicleDescription())
-                .city(vehicle.getCity())
-                .dealerContactName(vehicle.getDealer().getOwnerName())
-                .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                .dealerContactEmail(vehicle.getDealer().getEmail())
-                .dealerYearsInBusiness(vehicle.getDealer().getYearsInBusiness())
-                .vehicleStatus(vehicle.getVehicleStatus())
-                .financeAvailability(vehicle.isFinanceAvailability())
-                .vehicleType(vehicle.getVehicleType())
-                .createdAt(vehicle.getCreatedAt())
-                .dealerLogo(buildMediaUrl(vehicle.getDealer().getDealerLogo()))
-                .dealerShowroomImage(buildMediaUrl(vehicle.getDealer().getShowroomImage()))
-                .images(
-                        vehicle.getMediaList() == null
-                                ? List.of()
-                                : vehicle.getMediaList().stream()
-                                .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                .map(media -> buildMediaUrl(media.getFilePath()))
-                                .toList()
-                )
-
-                .videos(
-                        vehicle.getMediaList() == null
-                                ? List.of()
-                                : vehicle.getMediaList().stream()
-                                .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                .map(media -> buildMediaUrl(media.getFilePath()))
-                                .toList()
-                )
-                .build();
+        return mapToDTO(vehicle, null);
     }
-
-    /**
-     * Builds a full media URL from a stored path, normalizing it first so a
-     * missing leading slash (e.g. from data saved before the upload-path fix)
-     * can never again produce a broken concatenated URL like
-     * "https://c1.caryanam.comuploads/dealers/127_logo.jpg".
-     * Add this once in VehicleServiceImpl if it isn't there yet.
-     */
-    private String buildMediaUrl(String storedPath) {
-
-        if (storedPath == null || storedPath.isBlank()) {
-            return null;
-        }
-
-        String normalized = storedPath.replace("\\", "/").trim();
-
-        if (!normalized.startsWith("/")) {
-            normalized = "/" + normalized;
-        }
-
-        return serverUrl + normalized;
-    }
-
 
     @Override
     public List<VehicleResponseDTO> getAllNonPremiumVehicle(Long customerId) {
-
-        List<Vehicle> vehicles =
-                vehicleRepository.findAllActiveAndFeaturedVehicles(
-                        VehicleType.NON_PREMIUM);
-
+        List<Vehicle> vehicles = vehicleRepository.findAllActiveAndFeaturedVehicles(VehicleType.NON_PREMIUM);
 
         if (vehicles.isEmpty()) {
             throw new ResourceNotFoundException("No vehicles found");
         }
 
         return vehicles.stream()
-                .map(vehicle -> VehicleResponseDTO.builder()
-                        .id(vehicle.getId())
-                        .dealerId(vehicle.getDealer().getId())
-                        .brand(vehicle.getBrand())
-                        .model(vehicle.getModel())
-                        .variant(vehicle.getVariant())
-                        .registrationYear(vehicle.getRegistrationYear())
-                        .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
-                        .kilometerDriven(vehicle.getKilometerDriven())
-                        .fuelType(vehicle.getFuelType())
-                        .ownershipDetails(vehicle.getOwnershipDetails())
-                        .vehicleDescription(vehicle.getVehicleDescription())
-                        .city(vehicle.getCity())
-                        .dealerContactName(vehicle.getDealer().getOwnerName())
-                        .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                        .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                        .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                        .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                        .dealerContactEmail(vehicle.getDealer().getEmail())
-                        .vehicleStatus(vehicle.getVehicleStatus())
-                        .vehicleType(vehicle.getVehicleType())
-                        .createdAt(vehicle.getCreatedAt())
-                        .financeAvailability(vehicle.isFinanceAvailability())
-                        .images(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media ->serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-                        .videos(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-                        .isWishList(
-                                wishlistRepository.existsByCustomer_IdAndVehicle_Id(
-                                        customerId,
-                                        vehicle.getId()
-                                )
-                        )
-                        .build())
+                .map(v -> mapToDTO(v, customerId))
                 .toList();
     }
 
-
     @Override
     public List<VehicleResponseDTO> getAllPremiumVehicle(Long customerId) {
-
-        List<Vehicle> vehicles =
-                vehicleRepository.findAllActiveAndFeaturedVehicles(
-                        VehicleType.PREMIUM);
+        List<Vehicle> vehicles = vehicleRepository.findAllActiveAndFeaturedVehicles(VehicleType.PREMIUM);
 
         if (vehicles.isEmpty()) {
             throw new ResourceNotFoundException("No vehicles found");
         }
 
         return vehicles.stream()
-                .map(vehicle -> VehicleResponseDTO.builder()
-                        .id(vehicle.getId())
-                        .dealerId(vehicle.getDealer().getId())
-                        .brand(vehicle.getBrand())
-                        .model(vehicle.getModel())
-                        .variant(vehicle.getVariant())
-                        .registrationYear(vehicle.getRegistrationYear())
-                        .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
-                        .kilometerDriven(vehicle.getKilometerDriven())
-                        .fuelType(vehicle.getFuelType())
-                        .ownershipDetails(vehicle.getOwnershipDetails())
-                        .vehicleDescription(vehicle.getVehicleDescription())
-                        .city(vehicle.getCity())
-                        .dealerContactName(vehicle.getDealer().getOwnerName())
-                        .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                        .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                        .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                        .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                        .dealerContactEmail(vehicle.getDealer().getEmail())
-                        .vehicleStatus(vehicle.getVehicleStatus())
-                        .vehicleType(vehicle.getVehicleType())
-                        .createdAt(vehicle.getCreatedAt())
-                        .financeAvailability(vehicle.isFinanceAvailability())
-                        .images(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-                        .videos(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        .map(media -> serverUrl +
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-                        .isWishList(
-                                wishlistRepository.existsByCustomer_IdAndVehicle_Id(
-                                        customerId,
-                                        vehicle.getId()
-                                )
-                        )
-                        .build())
+                .map(v -> mapToDTO(v, customerId))
+                .toList();
+    }
+
+    @Override
+    public List<VehicleResponseDTO> getAllVerifiedNonPremiumVehicle(Long customerId) {
+        List<Vehicle> vehicles = vehicleRepository.findAllActiveVerifiedVehicles(VehicleType.NON_PREMIUM);
+        return vehicles.stream()
+                .map(v -> mapToDTO(v, customerId))
+                .toList();
+    }
+
+    @Override
+    public List<VehicleResponseDTO> getAllVerifiedPremiumVehicle(Long customerId) {
+        List<Vehicle> vehicles = vehicleRepository.findAllActiveVerifiedVehicles(VehicleType.PREMIUM);
+        return vehicles.stream()
+                .map(v -> mapToDTO(v, customerId))
                 .toList();
     }
 
     @Override
     public List<VehicleResponseDTO> getLatestFeaturedVehicles(Long customerId) {
-
-        List<Vehicle> vehicles = vehicleRepository
-                .findTop10ByVehicleStatusOrderByIdDesc(
-                        VehicleStatus.FEATURED);
-
+        List<Vehicle> vehicles = vehicleRepository.findTop10ByVehicleStatusOrderByIdDesc(VehicleStatus.FEATURED);
         return vehicles.stream()
-                .map(vehicle -> VehicleResponseDTO.builder()
-                        .id(vehicle.getId())
-                        .dealerId(vehicle.getDealer().getId())
-                        .brand(vehicle.getBrand())
-                        .model(vehicle.getModel())
-                        .variant(vehicle.getVariant())
-                        .registrationYear(vehicle.getRegistrationYear())
-                        .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
-                        .kilometerDriven(vehicle.getKilometerDriven())
-                        .fuelType(vehicle.getFuelType())
-                      //  .transmission(vehicle.getTransmission())
-                        .ownershipDetails(vehicle.getOwnershipDetails())
-                  //      .insuranceStatus(String.valueOf(vehicle.getInsuranceStatus()))
-                        .vehicleDescription(vehicle.getVehicleDescription())
-                        .city(vehicle.getCity())
-                        .dealerContactName(vehicle.getDealer().getOwnerName())
-                        .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                        .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                        .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                        .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                        .dealerContactEmail(vehicle.getDealer().getEmail())
-                        .vehicleStatus(vehicle.getVehicleStatus())
-                        .vehicleType(vehicle.getVehicleType())
-                        .createdAt(vehicle.getCreatedAt())
-                    //    .rtoInformation(vehicle.getRtoInformation())
-                        .financeAvailability(vehicle.isFinanceAvailability())
-                        .images(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-
-                        .videos(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-
-                                        .map(media ->serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-                        .isWishList(
-                                wishlistRepository.existsByCustomer_IdAndVehicle_Id(
-                                        customerId,
-                                        vehicle.getId()
-                                )
-                        )
-
-                        .build())
+                .map(v -> mapToDTO(v, customerId))
                 .toList();
     }
 
     @Override
     public List<VehicleResponseDTO> getLatestVehicles(Long customerId) {
-
-
-        List<Vehicle> vehicles =
-                vehicleRepository.findTop10ByVehicleStatusInOrderByCreatedAtDesc(
-                        List.of(VehicleStatus.ACTIVE,VehicleStatus.FEATURED)
-                );
+        List<Vehicle> vehicles = vehicleRepository.findTop10ByVehicleStatusInOrderByCreatedAtDesc(
+                List.of(VehicleStatus.ACTIVE, VehicleStatus.FEATURED)
+        );
 
         return vehicles.stream()
-                .filter(vehicle ->
-                        vehicle.getVehicleStatus() == VehicleStatus.ACTIVE
-                                || vehicle.getVehicleStatus() == VehicleStatus.FEATURED)
-                .map(vehicle -> VehicleResponseDTO.builder()
-                        .id(vehicle.getId())
-                        .dealerId(vehicle.getDealer().getId())
-                        .brand(vehicle.getBrand())
-                        .model(vehicle.getModel())
-                        .variant(vehicle.getVariant())
-                        .registrationYear(vehicle.getRegistrationYear())
-                        .askingPrice(BigDecimal.valueOf(vehicle.getAskingPrice()))
-                        .kilometerDriven(vehicle.getKilometerDriven())
-                        .fuelType(vehicle.getFuelType())
-                        .ownershipDetails(vehicle.getOwnershipDetails())
-                        .vehicleDescription(vehicle.getVehicleDescription())
-                        .city(vehicle.getCity())
-                        .dealerContactName(vehicle.getDealer().getOwnerName())
-                        .dealerContactNumber(vehicle.getDealer().getDealerMobile())
-                        .executiveMobile(vehicle.getDealer().getExecutiveMobile())
-                        .dealerWhatsappNumber(vehicle.getDealer().getWhatsapp())
-                        .dealerBusinessName(vehicle.getDealer().getBusinessName())
-                        .dealerContactEmail(vehicle.getDealer().getEmail())
-                        .vehicleStatus(vehicle.getVehicleStatus())
-                        .vehicleType(vehicle.getVehicleType())
-                        .createdAt(vehicle.getCreatedAt())
-                        .financeAvailability(vehicle.isFinanceAvailability())
-                        .images(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
-                                        //.map(VehicleMedia::getFilePath)
-                                        .map(media -> serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-
-                        .videos(
-                                vehicle.getMediaList() == null
-                                        ? List.of()
-                                        : vehicle.getMediaList().stream()
-                                        .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
-                                        //.map(VehicleMedia::getFilePath)
-                                        .map(media ->serverUrl+
-                                                media.getFilePath().replace("\\", "/"))
-                                        .toList()
-                        )
-                        .isWishList(
-                                wishlistRepository.existsByCustomer_IdAndVehicle_Id(
-                                        customerId,
-                                        vehicle.getId()
-                                )
-                        )
-
-                        .build())
+                .filter(vehicle -> vehicle.getVehicleStatus() == VehicleStatus.ACTIVE
+                        || vehicle.getVehicleStatus() == VehicleStatus.FEATURED)
+                .map(v -> mapToDTO(v, customerId))
                 .toList();
     }
 
+    // ==========================================
+    // CENTRALIZED DTO MAPPER
+    // ==========================================
+
+    private VehicleResponseDTO mapToDTO(Vehicle vehicle, Long customerId) {
+        List<String> image = vehicle.getMediaList() == null
+                ? List.of()
+                : vehicle.getMediaList().stream()
+                .filter(media -> "IMAGE".equalsIgnoreCase(media.getMediaType()))
+                .map(media -> buildMediaUrl(media.getFilePath()))
+                .toList();
+
+        List<String> video = vehicle.getMediaList() == null
+                ? List.of()
+                : vehicle.getMediaList().stream()
+                .filter(media -> "VIDEO".equalsIgnoreCase(media.getMediaType()))
+                .map(media -> buildMediaUrl(media.getFilePath()))
+                .toList();
+
+        boolean isWish = customerId != null && wishlistRepository.existsByCustomer_IdAndVehicle_Id(customerId, vehicle.getId());
+
+        Dealer d = vehicle.getDealer();
+
+        return VehicleResponseDTO.builder()
+                .id(vehicle.getId())
+                .dealerId(d != null ? d.getId() : null)
+                .brand(vehicle.getBrand())
+                .model(vehicle.getModel())
+                .variant(vehicle.getVariant())
+                .registrationYear(vehicle.getRegistrationYear())
+                .askingPrice(vehicle.getAskingPrice() != null ? BigDecimal.valueOf(vehicle.getAskingPrice()) : null)
+                .kilometerDriven(vehicle.getKilometerDriven())
+                .fuelType(vehicle.getFuelType())
+                .ownershipDetails(vehicle.getOwnershipDetails())
+                .vehicleDescription(vehicle.getVehicleDescription())
+                .city(vehicle.getCity())
+                .dealerContactName(d != null ? d.getOwnerName() : null)
+                .dealerContactNumber(d != null ? d.getDealerMobile() : null)
+                .executiveMobile(d != null ? d.getExecutiveMobile() : null)
+                .dealerWhatsappNumber(d != null ? d.getWhatsapp() : null)
+                .dealerBusinessName(d != null ? d.getBusinessName() : null)
+                .dealerContactEmail(d != null ? d.getEmail() : null)
+                .dealerYearsInBusiness(d != null ? d.getYearsInBusiness() : 0)
+                .dealerLogo(d != null ? buildMediaUrl(d.getDealerLogo()) : null)
+                .dealerShowroomImage(d != null ? buildMediaUrl(d.getShowroomImage()) : null)
+                .vehicleStatus(vehicle.getVehicleStatus())
+                .vehicleType(vehicle.getVehicleType())
+                .createdAt(vehicle.getCreatedAt())
+                .financeAvailability(vehicle.isFinanceAvailability())
+
+                // Certification details
+                .certifyRequested(vehicle.getCertifyRequested())
+                .isCertified(vehicle.getIsCertified())
+                .inspectionStatus(vehicle.getInspectionStatus())
+                .certifiedAt(vehicle.getCertifiedAt())
+                .certifiedByInspectorId(vehicle.getCertifiedBy() != null ? vehicle.getCertifiedBy().getId() : null)
+                .certifiedByInspectorName(vehicle.getCertifiedBy() != null ? vehicle.getCertifiedBy().getFullName() : null)
+                .inspectionNotes(vehicle.getInspectionNotes())
+
+                .images(image)
+                .videos(video)
+                .isWishList(isWish)
+                .build();
+    }
+
+    private String buildMediaUrl(String storedPath) {
+        if (storedPath == null || storedPath.isBlank()) {
+            return null;
+        }
+        String normalized = storedPath.replace("\\", "/").trim();
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        return serverUrl + normalized;
+    }
 }

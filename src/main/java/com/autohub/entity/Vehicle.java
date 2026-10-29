@@ -1,5 +1,6 @@
 package com.autohub.entity;
 
+import com.autohub.enums.InspectionStatus;
 import com.autohub.enums.InsuranceStatus;
 import com.autohub.enums.VehicleStatus;
 import com.autohub.enums.VehicleType;
@@ -83,19 +84,48 @@ public class Vehicle {
 
     private String dealerContactNumber;
 
-
-
     @ManyToOne
     @JoinColumn(name = "dealerId")
     private Dealer dealer;
 
-//    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL,orphanRemoval = true)
-//    private List<VehicleMedia> mediaList;
+    @Builder.Default
+    @Column(name = "certify_requested", columnDefinition = "bit(1) default 0")
+    private Boolean certifyRequested = false;
 
+    @Builder.Default
+    @Column(name = "is_certified", columnDefinition = "bit(1) default 0")
+    private Boolean isCertified = false;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "inspection_status", columnDefinition = "varchar(30) default 'NONE'")
+    private InspectionStatus inspectionStatus = InspectionStatus.NONE;
+
+    private LocalDateTime certifiedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "certified_by_inspector_id")
+    private Inspector certifiedBy;
+
+    @Column(columnDefinition = "TEXT")
+    private String inspectionNotes;
 
     @OneToMany(
             mappedBy = "vehicle",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @Builder.Default
     private List<VehicleMedia> mediaList = new ArrayList<>();
+
+    public Boolean getCertifyRequested() {
+        return certifyRequested != null ? certifyRequested : false;
+    }
+
+    public Boolean getIsCertified() {
+        return isCertified != null ? isCertified : false;
+    }
+
+    public InspectionStatus getInspectionStatus() {
+        return inspectionStatus != null ? inspectionStatus : InspectionStatus.NONE;
+    }
 }

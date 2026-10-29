@@ -204,4 +204,34 @@ public class VehicleController {
 
 
 
+
+    // ================= GET ALL VERIFIED NON-PREMIUM VEHICLES =================
+    @RateLimit(capacity = 30, refillTokens = 30, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
+    @GetMapping("/verified-non-premium")
+    @Operation(summary = "Get all verified non-premium vehicles")
+    public ResponseEntity<ResponseDto<List<VehicleResponseDTO>>> getAllVerifiedNonPremiumVehicle(
+            @RequestParam(required = false) Long customerId) {
+
+        return ResponseEntity.ok(
+                new ResponseDto<>(
+                        200,
+                        "All Verified Non-Premium Vehicles fetched successfully",
+                        vehicleService.getAllVerifiedNonPremiumVehicle(customerId))
+        );
+    }
+
+    // ================= GET ALL VERIFIED PREMIUM VEHICLES =================
+    @RateLimit(capacity = 30, refillTokens = 30, refillDurationInSeconds = 60, type = RateLimitType.IP_AND_ENDPOINT)
+    @GetMapping("/verified-premium")
+    @Operation(summary = "Get all verified premium vehicles")
+    public ResponseEntity<ResponseDto<List<VehicleResponseDTO>>> getAllVerifiedPremiumVehicle(
+            @RequestParam(required = false) Long customerId) {
+
+        return ResponseEntity.ok(
+                new ResponseDto<>(
+                        200,
+                        "All Verified Premium Vehicles fetched successfully",
+                        vehicleService.getAllVerifiedPremiumVehicle(customerId))
+        );
+    }
 }
